@@ -11,6 +11,6 @@ Himark is a CLI chat application. Users host a himark.server application on thei
 - requests
 
 # Running the Server
-First, make sure you are in your venv with the required packages from above. Next, run 
-```uvicron himark_server:app --reload```
+First, make sure you are in your venv with the required packages from above. Next, run \
+```uvicorn himark_server:app --reload``` \
 in your terminal. This will host the server on your local machine on port 8000.
