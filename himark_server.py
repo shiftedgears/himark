@@ -1,6 +1,6 @@
 from typing import Union
 from pydantic import BaseModel
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 
 app = FastAPI()
 
@@ -12,6 +12,8 @@ SERVER_INIT_CONNECTION_RESPONSE_BAD = "DONTTOUCHME"
 
 """ ENDING OF MARCORS """
 
+
+
 class client_connection_request(BaseModel):
     arg1: str
 
@@ -22,7 +24,7 @@ class client_connection_response(BaseModel):
 def read_root():
     return {"hi":"mark"}
 
-@app.post("/connection_attempt", response_model=client_connection_response)
+@app.post("/connection_attempt")
 def connection_request(request: client_connection_request): #receive a connection request from the client
     if(request.arg1 == CLIENT_INIT_CONNECTION_MESSAGE):
         return client_connection_response(arg2 = SERVER_INIT_CONNECTION_RESPONSE)
@@ -32,3 +34,4 @@ def connection_request(request: client_connection_request): #receive a connectio
 @app.get("/BBS")
 def display_board_info():
     return {"Channel Title": "Board 1", "Update":"asdfasdfasdf asdfasdfasdfasdf asdfasdfasdfasdfasdf"}
+
