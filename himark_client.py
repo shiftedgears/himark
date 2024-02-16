@@ -7,6 +7,7 @@ port = "8000"
 CLIENT_INIT_CONNECTION_MESSAGE = "HIMARK"
 SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 
+
 try:
     url = f"http://{ip}:{port}"
     response = requests.get(f"{url}/BBS")
