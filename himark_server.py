@@ -12,7 +12,7 @@ SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 SERVER_INIT_CONNECTION_RESPONSE_BAD = "DONTTOUCHME"
 
 
-# ENDING OF MARCROS
+# ENDING OF MACROS
 
 
 # CLASSES
@@ -65,7 +65,9 @@ class client_connection_response(BaseModel):
 
 # END CLASSES
 
+
 manager = ConnectionManager()
+
 
 # FastAPI stuff
 
