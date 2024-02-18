@@ -18,16 +18,14 @@ SERVER_INIT_CONNECTION_RESPONSE_BAD = "DONTTOUCHME"
 # CLASSES
 class Client:
     def __init__(self, websocket: WebSocket):
-        self.websock = None
+        self.websock = websocket
 
     def connect(self, addr: str) -> bool:
         pass
 
     def get_socket(self) -> WebSocket:
-        if self.websock is None:
-            raise Exception("Socket does not exist")
-        else:
             return self.websock
+
 
 class ConnectionManager:
     def __init__(self):
@@ -36,21 +34,21 @@ class ConnectionManager:
     async def connect(self, client: Client):
         await client.get_socket().accept()
         self.active_conn.append(client)
-        print("Connection Accepted")
+        print("[WS] Connection Accepted")
 
     async def broadcast(self, message: str):
-        print("Broadcasting to Clients...")
+        print("[WS] Broadcasting to Clients...", end="")
         for client in self.active_conn:
             await client.websock.send_text(message)
-        print("...Done.")
+        print("Done.")
 
     async def send_msg(self, client: Client, message: str):
         await client.websock.send_text(message)
-        print("Message sent to Client")
+        print("[WS] Message sent to Client")
 
     def disconnect(self, client: Client):
         self.active_conn.remove(client)
-        print("Client disconnected")
+        print("[WS] Client disconnected")
 
 
 
@@ -79,10 +77,9 @@ async def establish_listener(websocket: WebSocket):
         while True:
             data = await new_client.get_socket().receive_text()
             print(data)
-            await manager.broadcast("oh hai mark")
+            await manager.broadcast("broadcast msg")
     except WebSocketDisconnect:
         manager.disconnect(new_client)
-        await manager.send_msg(new_client, "goodbye")
 
 
 @app.get("/")
