@@ -1,6 +1,8 @@
 from typing import Union
 from pydantic import BaseModel
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from ConnectionManager import ConnectionManager, Client
+from RoomManager import Room, RoomManager
 import asyncio
 
 app = FastAPI()
@@ -16,43 +18,6 @@ SERVER_INIT_CONNECTION_RESPONSE_BAD = "DONTTOUCHME"
 
 
 # CLASSES
-class Client:
-    def __init__(self, websocket: WebSocket):
-        self.websock = websocket
-
-    def connect(self, addr: str) -> bool:
-        pass
-
-    def get_socket(self) -> WebSocket:
-            return self.websock
-
-
-class ConnectionManager:
-    def __init__(self):
-        self.active_conn = []
-
-    async def connect(self, client: Client):
-        await client.get_socket().accept()
-        self.active_conn.append(client)
-        print("[WS] Connection Accepted")
-
-    async def broadcast(self, message: str):
-        print("[WS] Broadcasting to Clients...", end="")
-        for client in self.active_conn:
-            await client.websock.send_text(message)
-        print("Done.")
-
-    async def send_msg(self, client: Client, message: str):
-        await client.websock.send_text(message)
-        print("[WS] Message sent to Client")
-
-    def disconnect(self, client: Client):
-        self.active_conn.remove(client)
-        print("[WS] Client disconnected")
-
-
-
-
 
 class client_connection_request(BaseModel):
     arg1: str
@@ -64,22 +29,22 @@ class client_connection_response(BaseModel):
 # END CLASSES
 
 
-manager = ConnectionManager()
-
+conn_manager = ConnectionManager()
+room_manager = RoomManager()
 
 # FastAPI stuff
 
 @app.websocket("/ws_connect")
 async def establish_listener(websocket: WebSocket):
     new_client = Client(websocket)
-    await manager.connect(new_client)
+    await conn_manager.connect(new_client)
     try:
         while True:
             data = await new_client.get_socket().receive_text()
             print(data)
-            await manager.broadcast("broadcast msg")
+            await conn_manager.broadcast("broadcast msg")
     except WebSocketDisconnect:
-        manager.disconnect(new_client)
+        conn_manager.disconnect(new_client)
 
 
 @app.get("/")

@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     try:
         with connect(WS_SERVER_ADDR) as websocket:
-            websocket.send("hello")
+
 
             while True:
                 recv = websocket.recv()
