@@ -34,6 +34,7 @@ async def send_message(ws):
             else:
                 await ws.send(txt)
     except KeyboardInterrupt:
+        await ws.close()
         sys.exit("Program killed via Ctrl-c by user")
 
 async def main():
