@@ -34,6 +34,11 @@ room_manager = RoomManager()
 
 # FastAPI stuff
 
+@app.on_event("startup")
+async def start_up():
+    print("startup event!!")
+
+
 @app.websocket("/ws_connect")
 async def establish_listener(websocket: WebSocket):
 

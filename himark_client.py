@@ -64,7 +64,7 @@ async def main():
         sys.exit("Program killed by user")
     except SystemExit:
         sys.exit("Program killed by user")
-    except aysncio.CancelledError:
+    except asyncio.CancelledError:
         sys.exit("There was an error cancelling an asynchronous routine")
 
 
