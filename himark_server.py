@@ -36,13 +36,14 @@ room_manager = RoomManager()
 
 @app.websocket("/ws_connect")
 async def establish_listener(websocket: WebSocket):
+
     new_client = Client(websocket)
     await conn_manager.connect(new_client)
     try:
         while True:
             data = await new_client.get_socket().receive_text()
-            print(data)
-            await conn_manager.broadcast("broadcast msg")
+            print(f"From {websocket}")
+            await conn_manager.broadcast(f"broadcast msg: {data}")
     except WebSocketDisconnect:
         conn_manager.disconnect(new_client)
 

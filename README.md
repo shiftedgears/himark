@@ -6,9 +6,12 @@ Himark is a CLI chat application. Users host a himark.server application on thei
 # Packages Required
 
 - fastapi
-- "uvicorn[standard]"
+- uvicorn[standard]
 - websockets
 - requests
+- aioconsole
+- pydantic
+- asyncio
 
 # Running the Server
 First, make sure you are in your venv with the required packages from above. Next, run \
