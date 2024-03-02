@@ -7,6 +7,7 @@ from websockets.exceptions import ConnectionClosed, WebSocketException
 import sys
 import aioconsole
 
+
 ip = "127.0.0.1"
 port = "8000"
 

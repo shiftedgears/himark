@@ -1,17 +1,19 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-
+import uuid
+from RoomManager import Room
 
 class Client:
-    def __init__(self, websocket: WebSocket, name: str, id: str):
+    def __init__(self, websocket: WebSocket, name: str, user_id: uuid):
         self.websock = websocket
         self.name = name
-        self.id = id
+        self.id = user_id
+        self.curr_room = None
 
-    def connect(self, addr: str) -> bool:
-        pass
+    def __str__(self):
+        return f"Name: {self.name}, ID: {self.id}, Room: {self.curr_room}"
 
-    def disconnect(self):
-        self.websock.close()
+    async def disconnect(self):
+        await self.websock.close()
 
     def get_socket(self) -> WebSocket:
         return self.websock
@@ -19,6 +21,17 @@ class Client:
     def get_name(self) -> str:
         return self.name
 
+    def get_room(self) -> Room:
+        return self.curr_room
+
+    def set_room(self, room: Room) -> bool:
+        self.curr_room = Room
+
+    def set_name(self, name: str):
+        self.name = name
+
+    def get_id(self):
+        return self.id
 
 class ConnectionManager:
     def __init__(self):
@@ -45,6 +58,13 @@ class ConnectionManager:
 
         return False
 
-    def disconnect(self, client: Client):
+    async def disconnect(self, client: Client):
         self.active_conn.remove(client)
         print("[WS] Client disconnected")
+
+    def find_user_by_id(self, user_uuid: uuid) -> Client:
+        for user in self.active_conn:
+            if user.get_id == user_uuid:
+                return user
+
+        return None

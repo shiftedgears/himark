@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from ConnectionManager import ConnectionManager, Client
 from RoomManager import Room, RoomManager
+import uuid
+
 import asyncio
 
 app = FastAPI()
@@ -42,15 +44,22 @@ async def start_up():
 @app.websocket("/ws_connect")
 async def establish_listener(websocket: WebSocket):
 
-    new_client = Client(websocket)
+    new_id = uuid.uuid4()
+    new_client = Client(websocket, "default", str(new_id))
+    name_established = False
     await conn_manager.connect(new_client)
     try:
         while True:
+            if not name_established:
+                user_name = await new_client.get_socket().receive_text()
+                new_client.set_name(user_name)
+                print(f"New connection!: {new_client}")
+                name_established = True
             data = await new_client.get_socket().receive_text()
             print(f"From {websocket}")
             await conn_manager.broadcast(f"broadcast msg: {data}")
     except WebSocketDisconnect:
-        conn_manager.disconnect(new_client)
+        await conn_manager.disconnect(new_client)
 
 
 @app.get("/")
