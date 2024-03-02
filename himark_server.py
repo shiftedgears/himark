@@ -4,6 +4,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from ConnectionManager import ConnectionManager, Client
 from RoomManager import Room, RoomManager
 import asyncio
+import websockets
 
 app = FastAPI()
 
@@ -13,7 +14,9 @@ CLIENT_INIT_CONNECTION_MESSAGE = "HIMARK"
 SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 SERVER_INIT_CONNECTION_RESPONSE_BAD = "DONTTOUCHME"
 
-
+LIST_SERVER_ROOMS = r"\l"
+CHANGE_NAME = r"\n"
+CHANGE_ROOM = r"\r"
 # ENDING OF MACROS
 
 
@@ -25,6 +28,7 @@ class client_connection_request(BaseModel):
 
 class client_connection_response(BaseModel):
     arg2: str
+
 
 # END CLASSES
 
@@ -43,7 +47,8 @@ async def establish_listener(websocket: WebSocket):
         while True:
             data = await new_client.get_socket().receive_text()
             print(f"From {websocket}")
-            await conn_manager.broadcast(f"broadcast msg: {data}")
+            #interpret the message and handle it if it's a command
+            await interpret_message(new_client, data)
     except WebSocketDisconnect:
         conn_manager.disconnect(new_client)
 
@@ -54,13 +59,44 @@ def read_root():
 
 
 @app.post("/connection_attempt", response_model=client_connection_response)
-def connection_request(request: client_connection_request):  # receive a connection request from the client
+async def connection_request(request: client_connection_request):  # receive a connection request from the client
     if request.arg1 == CLIENT_INIT_CONNECTION_MESSAGE:
         return client_connection_response(arg2=SERVER_INIT_CONNECTION_RESPONSE)
     else:
         return client_connection_response(arg2=SERVER_INIT_CONNECTION_RESPONSE_BAD)
 
-
-@app.get("/BBS")
-def display_board_info():
-    return {"Channel Title": "Board 1", "Update": "asdfasdfasdf asdfasdfasdfasdf asdfasdfasdfasdfasdf"}
+#interpret and handles a message from the client
+async def interpret_message(client: Client, message: str):
+    #we want to parse the message to see if there is a command the user is issuing
+    if(message.startswith(LIST_SERVER_ROOMS)): #if the request from the user is to list rooms
+        room_manager.list_rooms() #this will list the rooms in this room manager
+        
+    elif(message.startswith(CHANGE_NAME)): #if user wants to change their name 
+        args = message.split() #split the message into a list
+        #args[0] is CHANGE_NAME
+        #args[1] is the new name. anything after the name is not considered part of the name
+        try:
+            if args[1]: #if there was a second argument
+                pass #TODO change the name
+        except IndexError:
+            pass #TODO not enough arguments provided. tell user
+    
+    elif(message.startswith(CHANGE_ROOM)): #if client wants to change what room they're in
+        args = message.split() #split the message into a list
+        #args[0] is CHANGE_ROOM
+        #args[1] is the room
+        try:
+            if args[1]: #if there was a second argument
+                if not room_manager.find_room(args[1]): #if a room of name args[1] exists
+                    pass #TODO change the room the user is in
+                else:
+                    pass #TODO tell the user that room doesn't exist
+                pass #TODO verify the room exists and change the clients current room
+        except IndexError:
+            pass #TODO not enough arguments provided. tell user
+    
+    else:
+        #otherwise this is a regular message
+        #call function that sends the message to the room the user is in
+        await conn_manager.broadcast(f"msg: {message}")
+        
