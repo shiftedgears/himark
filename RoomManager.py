@@ -30,6 +30,11 @@ class Room:
 class RoomManager:
     def __init__(self):
         self.rooms = []
+        
+    #when called, prints out a list of all the rooms in the room manager
+    def list_rooms(self) -> None:
+        for room in self.rooms:
+            print(f"-{room.name}")
 
     # find_room(name: str)
     # attempts to return a reference to a room object whose name matches
