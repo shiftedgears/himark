@@ -28,7 +28,7 @@ async def send_message(ws):
         while usr_exit:
             txt = await aioconsole.ainput("please enter some text ")
 
-            if txt == "exit":
+            if txt == "exit": #tell the server we are disconnecting
                 await ws.close()
                 usr_exit = False
             else:

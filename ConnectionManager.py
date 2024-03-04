@@ -48,3 +48,7 @@ class ConnectionManager:
     def disconnect(self, client: Client):
         self.active_conn.remove(client)
         print("[WS] Client disconnected")
+
+    #function to tell this specific client a message
+    async def tell_client(self, client: Client, message: str):
+        await client.websock.send_text(message)
