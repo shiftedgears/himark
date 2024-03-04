@@ -20,6 +20,11 @@ If you are running the server in a virtual environment, use the command\
 to create your virtual environment, and then change into your virtual environment via\
 ```source ./himark_venv/bin/activate ```
 
+### rooms.txt
+Create a .txt file under the name 'rooms.txt' with the names of the rooms you wish to host on the server, in your same directory as himark_server.py. 
+The rooms are read in one line at a time and spaces will be turned to underscores to make switching rooms implementation easier.
+If rooms.txt cannot open or be found, one default room will be created under the name 'default'.
+
 ### Commands for Running
 Once in your venv, or if you choose not to have a virtual environment, ensure you have the required packages by running\
 ```pip install -r reqs.txt```\
