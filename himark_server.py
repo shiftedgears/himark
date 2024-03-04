@@ -1,3 +1,4 @@
+from audioop import add
 from typing import Union
 from pydantic import BaseModel
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -41,6 +42,37 @@ conn_manager = ConnectionManager()
 room_manager = RoomManager()
 
 # FastAPI stuff
+
+#Executes before server startup
+@app.on_event("startup")
+async def start_up():
+    try:
+        #open rooms txt file
+        file = open("rooms.txt", "r")
+    #if rooms.txt DNE or not in right directory
+    except FileNotFoundError:
+        print("Error: rooms.txt not found, creating default room")
+        room_manager.add_room('default')
+        print("Building rooms...:")
+        for room in room_manager.rooms:
+            print(room.name)
+        return
+
+    while True:
+        #read in each room name 
+        content = file.readline().strip().replace(' ', '_')
+        #if file done, break out 
+        if not content:
+            break
+        #create rooms
+        room_manager.add_room(content)
+    file.close()
+    
+    #rooms being built
+    print("Building rooms...:")
+    for room in room_manager.rooms:
+        print(room.name)
+
 
 @app.websocket("/ws_connect")
 async def establish_listener(websocket: WebSocket):
