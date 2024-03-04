@@ -48,7 +48,6 @@ async def start_up():
         print("Building rooms...:")
         for room in room_manager.rooms:
             print(room.name)
-        print(room_manager.rooms)
         return
 
     while True:
@@ -61,11 +60,10 @@ async def start_up():
         room_manager.add_room(content)
     file.close()
     
-    #testing
+    #rooms being built
     print("Building rooms...:")
     for room in room_manager.rooms:
         print(room.name)
-    print(room_manager.rooms)
 
 
 @app.websocket("/ws_connect")
