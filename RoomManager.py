@@ -63,7 +63,7 @@ class RoomManager:
     # returns true on success, false on failure
     def add_room(self, room_name: str) -> bool:
         if self.find_room(room_name):
-            print("Error: Room already Exists")
+            print(f"Error: Room '{room_name}' already Exists")
             return False
         else:
             self.rooms.append(Room(room_name))

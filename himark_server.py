@@ -1,3 +1,4 @@
+from audioop import add
 from typing import Union
 from pydantic import BaseModel
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -15,6 +16,10 @@ app = FastAPI()
 CLIENT_INIT_CONNECTION_MESSAGE = "HIMARK"
 SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 SERVER_INIT_CONNECTION_RESPONSE_BAD = "DONTTOUCHME"
+
+ROOM_NOT_FOUND = "That room does not exist."
+NO_NAME_PROVIDED = r"Please provide a name, i.e. \n BillyBee"
+NO_ROOM_PROVIDED = r"Please provide a room name, i.e. \r the_holodeck"
 
 LIST_SERVER_ROOMS = r"\l"
 CHANGE_NAME = r"\n"
@@ -40,9 +45,35 @@ room_manager = RoomManager()
 
 # FastAPI stuff
 
+#Executes before server startup
 @app.on_event("startup")
 async def start_up():
-    print("startup event!!")
+    try:
+        #open rooms txt file
+        file = open("rooms.txt", "r")
+    #if rooms.txt DNE or not in right directory
+    except FileNotFoundError:
+        print("Error: rooms.txt not found, creating default room")
+        room_manager.add_room('default')
+        print("Building rooms...:")
+        for room in room_manager.rooms:
+            print(room.name)
+        return
+
+    while True:
+        #read in each room name 
+        content = file.readline().strip().replace(' ', '_')
+        #if file done, break out 
+        if not content:
+            break
+        #create rooms
+        room_manager.add_room(content)
+    file.close()
+    
+    #rooms being built
+    print("Building rooms...:")
+    for room in room_manager.rooms:
+        print(room.name)
 
 
 @app.websocket("/ws_connect")
@@ -93,7 +124,7 @@ async def interpret_message(client: Client, message: str):
             if args[1]: #if there was a second argument
                 pass #TODO change the name
         except IndexError:
-            pass #TODO not enough arguments provided. tell user
+            conn_manager.send_msg(client, NO_NAME_PROVIDED)
     
     elif(message.startswith(CHANGE_ROOM)): #if client wants to change what room they're in
         args = message.split() #split the message into a list
@@ -103,11 +134,10 @@ async def interpret_message(client: Client, message: str):
             if args[1]: #if there was a second argument
                 if not room_manager.find_room(args[1]): #if a room of name args[1] exists
                     pass #TODO change the room the user is in
-                else:
-                    pass #TODO tell the user that room doesn't exist
-                pass #TODO verify the room exists and change the clients current room
+                else: #no room exists, tell user
+                    conn_manager.send_msg(client, ROOM_NOT_FOUND)
         except IndexError:
-            pass #TODO not enough arguments provided. tell user
+            conn_manager.send_msg(client, NO_ROOM_PROVIDED)
     
     else:
         #otherwise this is a regular message
