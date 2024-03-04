@@ -14,6 +14,10 @@ CLIENT_INIT_CONNECTION_MESSAGE = "HIMARK"
 SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 SERVER_INIT_CONNECTION_RESPONSE_BAD = "DONTTOUCHME"
 
+ROOM_NOT_FOUND = "That room does not exist."
+NO_NAME_PROVIDED = r"Please provide a name, i.e. \n BillyBee"
+NO_ROOM_PROVIDED = r"Please provide a room name, i.e. \r the_holodeck"
+
 LIST_SERVER_ROOMS = r"\l"
 CHANGE_NAME = r"\n"
 CHANGE_ROOM = r"\r"
@@ -79,7 +83,7 @@ async def interpret_message(client: Client, message: str):
             if args[1]: #if there was a second argument
                 pass #TODO change the name
         except IndexError:
-            pass #TODO not enough arguments provided. tell user
+            conn_manager.send_msg(client, NO_NAME_PROVIDED)
     
     elif(message.startswith(CHANGE_ROOM)): #if client wants to change what room they're in
         args = message.split() #split the message into a list
@@ -89,11 +93,10 @@ async def interpret_message(client: Client, message: str):
             if args[1]: #if there was a second argument
                 if not room_manager.find_room(args[1]): #if a room of name args[1] exists
                     pass #TODO change the room the user is in
-                else:
-                    pass #TODO tell the user that room doesn't exist
-                pass #TODO verify the room exists and change the clients current room
+                else: #no room exists, tell user
+                    conn_manager.send_msg(client, ROOM_NOT_FOUND)
         except IndexError:
-            pass #TODO not enough arguments provided. tell user
+            conn_manager.send_msg(client, NO_ROOM_PROVIDED)
     
     else:
         #otherwise this is a regular message
