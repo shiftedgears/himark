@@ -2,7 +2,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 
 class Client:
-    def __init__(self, websocket: WebSocket, name: str, id: str):
+    def __init__(self, websocket: WebSocket, name: str = 'no_name', id: str = "id"):
         self.websock = websocket
         self.name = name
         self.id = id

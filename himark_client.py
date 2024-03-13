@@ -6,6 +6,9 @@ import websockets
 from websockets.exceptions import ConnectionClosed, WebSocketException
 import sys
 import aioconsole
+from textual import on
+from textual.app import App, ComposeResult
+from textual.widgets import Input, Label, ListView, ListItem
 
 ip = "127.0.0.1"
 port = "8000"
@@ -16,28 +19,25 @@ SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 WS_SERVER_ADDR = f"ws://{ip}:{port}/ws_connect"
 CONNECT_SERVER_ADDR = f"http://{ip}:{port}/connection_attempt"
 
-async def wait_for_messages(ws):
+GLOBAL_WS = None
+
+async def wait_for_messages(textual_obj):
     while True:
-        recv = await ws.recv() #wait for a message
+        recv = await GLOBAL_WS.recv() #wait for a message
 
-        print(f"Received: {recv}")
+        textual_obj.query_one('#message_box').append(ListItem(Label(recv)))
 
-async def send_message(ws):
-    usr_exit = True
-    try:
-        while usr_exit:
-            txt = await aioconsole.ainput("please enter some text ")
+async def send_message(textual_obj, event):
+    txt = textual_obj.query_one(event)
 
-            if txt == "exit": #tell the server we are disconnecting
-                await ws.close()
-                usr_exit = False
-            else:
-                await ws.send(txt)
-    except KeyboardInterrupt:
-        await ws.close()
-        sys.exit("Program killed via Ctrl-c by user")
+    if txt.value == "exit": #tell the server we are disconnecting
+        await GLOBAL_WS.close()
+    else:
+        await GLOBAL_WS.send(txt.value)
 
-async def main():
+
+
+async def main(textual_obj):
     try:
         #test to see if a himark server is running on the given ip:port
         response = requests.post(CONNECT_SERVER_ADDR, json={"arg1":CLIENT_INIT_CONNECTION_MESSAGE})
@@ -47,11 +47,9 @@ async def main():
 
         async with websockets.connect(WS_SERVER_ADDR) as websocket:
 
-            message_wait = asyncio.create_task(wait_for_messages(websocket)) #task for waiting for messages
-            send_msg = asyncio.create_task(send_message(websocket))
+            GLOBAL_WS = websocket
 
-            await message_wait
-            await send_msg
+            asyncio.create_task(wait_for_messages(textual_obj)) #task for waiting for messages
 
     except WebSocketException:
         #raised when user types 'exit' to quit program
@@ -68,5 +66,20 @@ async def main():
         sys.exit("There was an error cancelling an asynchronous routine")
 
 
+class Client(App):
+    CSS_PATH = "client.tcss"
+
+    @on(Input.Submitted)
+    async def on_input_submitted(self) -> None:
+        send_message(self, Input)
+
+    def compose(self) -> ComposeResult:
+        yield ListView(classes="box", id="message_box") #box to put messages in
+        yield ListView(classes="names", id="name_box") #box to put connected users in
+        yield Input(placeholder=">", type="text") #box to capture input. on submit we call  send_message
+
+        asyncio.create_task(main(self))
+
 if __name__ == "__main__":
-    asyncio.run(main()) #run the main function asynchronously, so it can await message-wait and send_msg
+    client = Client()
+    client.run()

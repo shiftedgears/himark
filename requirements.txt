@@ -5,3 +5,4 @@ websockets
 aioconsole
 pydantic
 asyncio
+textual
