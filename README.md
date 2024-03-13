@@ -9,9 +9,9 @@ Himark is a CLI chat application. Users host a himark.server application on thei
 - uvicorn[standard]
 - websockets
 - requests
-- aioconsole
 - pydantic
 - asyncio
+- textual
 
 ## Running the Server
 ### Virtual Environment Setup

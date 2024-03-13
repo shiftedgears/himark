@@ -5,7 +5,6 @@ import asyncio
 import websockets
 from websockets.exceptions import ConnectionClosed, WebSocketException
 import sys
-import aioconsole
 from textual import on
 from textual.app import App, ComposeResult
 from textual.widgets import Input, Label, ListView, ListItem
@@ -72,7 +71,7 @@ class Client_Connection:
 
 class Client(App):
     CSS_PATH = "client.tcss"
-    LOG_FILE = "himark.log"
+    LOG_FILE = ".himark.log"
 
     @on(Input.Submitted)
     async def client_input(self) -> None:
@@ -90,12 +89,13 @@ class Client(App):
         yield ListView(classes="names", id="name_box") #box to put connected users in
         yield Input(placeholder=">", type="text") #box to capture input. on submit we call send_message
 
-        self.c_conn = Client_Connection(self)
-
         try:
+            self.c_conn = Client_Connection(self)
             asyncio.create_task(self.c_conn.main()) #run the main function of the client connection
+        except ConnectionError:
+            sys.exit(f"There is no himark server running on {ip}:{port}")
         except:
-            print("f")
+            print("An unplanned error occured.")
 
 if __name__ == "__main__":
     client = Client()
