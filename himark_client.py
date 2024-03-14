@@ -9,6 +9,7 @@ from textual import on
 from textual.app import App, ComposeResult
 from textual.widgets import Input, Label, ListView, ListItem, Header
 
+
 ip = "127.0.0.1"
 port = "8000"
 
