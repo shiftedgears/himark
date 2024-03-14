@@ -7,7 +7,7 @@ from websockets.exceptions import ConnectionClosed, WebSocketException
 import sys
 from textual import on
 from textual.app import App, ComposeResult
-from textual.widgets import Input, Label, ListView, ListItem
+from textual.widgets import Input, Label, ListView, ListItem, Header
 
 ip = "127.0.0.1"
 port = "8000"
@@ -72,6 +72,7 @@ class Client_Connection:
 class Client(App):
     CSS_PATH = "client.tcss"
     LOG_FILE = ".himark.log"
+    TITLE = "himark"
 
     @on(Input.Submitted)
     async def client_input(self) -> None:
@@ -85,6 +86,7 @@ class Client(App):
         input.value = "" #clear input
 
     def compose(self) -> ComposeResult:
+        yield Header()
         yield ListView(classes="box", id="message_box") #box to put messages in
         yield ListView(classes="names", id="name_box") #box to put connected users in
         yield Input(placeholder=">", type="text") #box to capture input. on submit we call send_message
