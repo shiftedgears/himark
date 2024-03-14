@@ -2,8 +2,10 @@ from audioop import add
 from typing import Union
 from pydantic import BaseModel
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from ConnectionManager import ConnectionManager, Client
-from RoomManager import Room, RoomManager
+from ConnectionManager import ConnectionManager
+from Client import Client
+from Room import Room
+from RoomManager import RoomManager
 import uuid
 
 import asyncio
@@ -20,6 +22,9 @@ SERVER_INIT_CONNECTION_RESPONSE_BAD = "DONTTOUCHME"
 ROOM_NOT_FOUND = "That room does not exist."
 NO_NAME_PROVIDED = r"Please provide a name, i.e. \n BillyBee"
 NO_ROOM_PROVIDED = r"Please provide a room name, i.e. \r the_holodeck"
+
+ASK_USERNAME = "Need Username."
+ASK_ROOM = "Which Room?\n"
 
 LIST_SERVER_ROOMS = r"\l"
 CHANGE_NAME = r"\n"
@@ -82,20 +87,32 @@ async def establish_listener(websocket: WebSocket):
     new_id = uuid.uuid4()
     new_client = Client(websocket, "default", str(new_id))
     name_established = False
+    found_room = False
     await conn_manager.connect(new_client)
     try:
         while True:
             if not name_established:
+                await conn_manager.send_msg(new_client, ASK_USERNAME)
                 user_name = await new_client.get_socket().receive_text()
                 new_client.set_name(user_name)
+                await conn_manager.send_msg(new_client, f"{ASK_ROOM} {room_manager.get_rooms()}")
+                desired_room = await new_client.get_socket().receive_text()
+                while not found_room:
+                    if room_manager.find_room(desired_room) is None:
+                        await conn_manager.send_msg(new_client, ROOM_NOT_FOUND)
+                        desired_room = await new_client.get_socket().receive_text()
+                    else:
+                        room_manager.add_client(new_client, desired_room)
+                        found_room = True
                 print(f"New connection!: {new_client}")
                 name_established = True
             data = await new_client.get_socket().receive_text()
-            print(f"From {websocket}")
-            #interpret the message and handle it if it's a command
+            print(f"From {new_client}")
+            # interpret the message and handle it if it's a command
             await interpret_message(new_client, data)
     except WebSocketDisconnect:
-        await conn_manager.disconnect(new_client)
+        conn_manager.disconnect(new_client)
+        room_manager.remove_client(new_client)
 
 
 @app.get("/")
@@ -142,5 +159,6 @@ async def interpret_message(client: Client, message: str):
     else:
         #otherwise this is a regular message
         #call function that sends the message to the room the user is in
-        await conn_manager.broadcast(f"msg: {message}")
+        room = room_manager.find_client_room(client)
+        await conn_manager.broadcast(room, f"msg: {message}")
         

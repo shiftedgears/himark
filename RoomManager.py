@@ -1,37 +1,12 @@
-
-class Room:
-    def __init__(self, name: str = "default"):
-        self.name = name
-        self.clients = []
-
-    def add_client(self, name: str) -> bool:
-        if name not in self.clients:
-            self.clients.append(name)
-            return True
-        else:
-            print("User already in List")
-            return False
-
-    def remove_client(self, name: str) -> bool:
-        if name in self.clients:
-            self.clients.remove(name)
-            return True
-        else:
-            print("No user found")
-            return False
-
-    def clear(self):
-        self.clients.clear()
-
-    def get_name(self):
-        return self.name
+from Client import Client
+from Room import Room
 
 
 class RoomManager:
     def __init__(self):
         self.rooms = []
         
-    #when called, prints out a list of all the rooms in the room manager
+    # when called, prints out a list of all the rooms in the room manager
     def list_rooms(self) -> None:
         for room in self.rooms:
             print(f"-{room.name}")
@@ -72,14 +47,14 @@ class RoomManager:
     # add_client(client_name: str, room_name: str)
     # attempts to append a user to a room.
     # returns true on success, or false on failure
-    def add_client(self, client_name: str, room_name: str) -> bool:
+    def add_client(self, client: Client, room_name: str) -> bool:
         room = self.find_room(room_name)
         if room is None:
             print("cannot find room")
             return False
 
-        if client_name not in room.clients:
-            room.clients.append(client_name)
+        if client not in room.clients:
+            room.clients.append(client)
             return True
         else:
             return False
@@ -87,24 +62,22 @@ class RoomManager:
     # remove_client(name: str, room_name: str)
     # removes a client from the server.
     # Returns true on success, otherwise false.
-    def remove_client(self, client_name: str, room_name: str)  -> bool:
-        room = self.find_room(room_name)
+    def remove_client(self, client: Client) -> bool:
+        room = self.find_client_room(client)
         if room is None:
-            print("cannot find room")
             return False
-
-        if room.remove_client(client_name):
-            return True
         else:
-            return False
+            room.remove_client(client)
+            return True
 
     # find_client_room(client_name: str)
     # attempts to find a room with client_name as a user.
     # Returns a Room on success, None on failure
-    def find_client_room(self, client_name: str) -> Room:
+    def find_client_room(self, client: Client) -> Room:
         for room in self.rooms:
-            if client_name in room.clients:
-                return room
+            for c in room.clients:
+                if client.iden == c.iden:
+                    return room
 
         return None
 
@@ -113,7 +86,16 @@ class RoomManager:
     # Returns true on success, or false on failure
     def find_client(self, client_name) -> bool:
         for room in self.rooms:
-            if client_name in room.clients:
+            if client_name in room.get_client_list():
                 return True
 
         return False
+
+    # get_rooms()
+    # returns a formatted string with all rooms
+    def get_rooms(self):
+        room_list = str()
+        for room in self.rooms:
+            room_list = room_list + room.get_name()
+
+        return room_list

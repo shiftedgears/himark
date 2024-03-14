@@ -1,18 +1,10 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-
-
-class Client:
-    def __init__(self, websocket: WebSocket):
-        self.websock = websocket
-
-    def connect(self, addr: str) -> bool:
-        pass
-
-    def get_socket(self) -> WebSocket:
-        return self.websock
+import Room
+import Client
 
 
 class ConnectionManager:
+
     def __init__(self):
         self.active_conn = []
 
@@ -21,9 +13,9 @@ class ConnectionManager:
         self.active_conn.append(client)
         print("[WS] Connection Accepted")
 
-    async def broadcast(self, message: str):
+    async def broadcast(self, room: Room, message: str):
         print("[WS] Broadcasting to Clients...", end="")
-        for client in self.active_conn:
+        for client in room.get_client_list():
             await client.websock.send_text(message)
         print("Done.")
 
