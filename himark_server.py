@@ -105,6 +105,7 @@ async def establish_listener(websocket: WebSocket):
                         room_manager.add_client(new_client, desired_room)
                         found_room = True
                 print(f"New connection!: {new_client}")
+                await conn_manager.send_msg(new_client, f"==== JOINED THE ROOM {desired_room} ====")
                 name_established = True
             data = await new_client.get_socket().receive_text()
             print(f"From {new_client}")
@@ -139,9 +140,10 @@ async def interpret_message(client: Client, message: str):
         #args[1] is the new name. anything after the name is not considered part of the name
         try:
             if args[1]: #if there was a second argument
-                pass #TODO change the name
+                client.set_name(args[1])
+                await conn_manager.send_msg(client, f"=== CHANGED NAME TO {args[1]} ====")
         except IndexError:
-            conn_manager.send_msg(client, NO_NAME_PROVIDED)
+            await conn_manager.send_msg(client, NO_NAME_PROVIDED)
     
     elif(message.startswith(CHANGE_ROOM)): #if client wants to change what room they're in
         args = message.split() #split the message into a list
@@ -149,16 +151,18 @@ async def interpret_message(client: Client, message: str):
         #args[1] is the room
         try:
             if args[1]: #if there was a second argument
-                if not room_manager.find_room(args[1]): #if a room of name args[1] exists
-                    pass #TODO change the room the user is in
+                if room_manager.find_room(args[1]): #if a room of name args[1] exists
+                    room_manager.remove_clien(client)
+                    room_manager.add_client(client, args[1])
+                    await conn_manager.send_msg(client, f"==== CHANGE ROOM TO {args[1]} ====")
                 else: #no room exists, tell user
-                    conn_manager.send_msg(client, ROOM_NOT_FOUND)
+                    await conn_manager.send_msg(client, ROOM_NOT_FOUND)
         except IndexError:
-            conn_manager.send_msg(client, NO_ROOM_PROVIDED)
+            await conn_manager.send_msg(client, NO_ROOM_PROVIDED)
     
     else:
         #otherwise this is a regular message
         #call function that sends the message to the room the user is in
         room = room_manager.find_client_room(client)
-        await conn_manager.broadcast(room, f"msg: {message}")
+        await conn_manager.broadcast(room, f"{client.get_name()}: {message}")
         

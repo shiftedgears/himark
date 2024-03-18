@@ -49,25 +49,8 @@ class Client_Connection:
 
 
     async def main(self):
-        try:
-
-            async with websockets.connect(WS_SERVER_ADDR) as self.ws:
-
-                await asyncio.create_task(self.wait_for_messages()) #task for waiting for messages
-
-        except WebSocketException:
-            #raised when user types 'exit' to quit program
-            sys.exit()
-        except ConnectionClosed:
-            sys.exit("Connection closed")
-        except ConnectionError:
-            sys.exit(f"No service is running on {ip}:{port}")
-        except KeyboardInterrupt:
-            sys.exit("Program killed by user")
-        except SystemExit:
-            sys.exit("Program killed by user")
-        except asyncio.CancelledError:
-            sys.exit("There was an error cancelling an asynchronous routine")
+        async with websockets.connect(WS_SERVER_ADDR) as self.ws:
+            await asyncio.create_task(self.wait_for_messages()) #task for waiting for messages
 
 
 class Client(App):
@@ -95,10 +78,19 @@ class Client(App):
         try:
             self.c_conn = Client_Connection(self)
             asyncio.create_task(self.c_conn.main()) #run the main function of the client connection
+        except WebSocketException:
+            #raised when user types 'exit' to quit program
+            sys.exit()
+        except ConnectionClosed:
+            sys.exit("Connection closed")
         except ConnectionError:
-            sys.exit(f"There is no himark server running on {ip}:{port}")
-        except:
-            print("An unplanned error occured.")
+            sys.exit(f"No service is running on {ip}:{port}")
+        except KeyboardInterrupt:
+            sys.exit("Program killed by user")
+        except SystemExit:
+            sys.exit("Program killed by user")
+        except asyncio.CancelledError:
+            sys.exit("There was an error cancelling an asynchronous routine")
 
 if __name__ == "__main__":
     client = Client()
