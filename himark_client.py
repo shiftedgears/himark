@@ -17,14 +17,16 @@ CLIENT_INIT_CONNECTION_MESSAGE = "HIMARK"
 SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 
 WS_SERVER_ADDR = f"ws://{ip}:{port}/ws_connect"
+WS_GET_ROOM_SERVER_ADD = f"ws://{ip}:{port}/client_room"
 CONNECT_SERVER_ADDR = f"http://{ip}:{port}/connection_attempt"
+
 class Client_Connection:
 
     def __init__(self, textual_obj):
         #attempt connection. if it works, continue. otherwise sys exit
         response = requests.post(CONNECT_SERVER_ADDR, json={"arg1":CLIENT_INIT_CONNECTION_MESSAGE})
 
-        if(response.json() != {'arg2':SERVER_INIT_CONNECTION_RESPONSE}):
+        if(response.json() != {'arg1':SERVER_INIT_CONNECTION_RESPONSE}):
             sys.exit(f"There is no himark server running on {ip}:{port}")
 
         self.ws = 0

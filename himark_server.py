@@ -34,12 +34,8 @@ CHANGE_ROOM = r"\r"
 
 # CLASSES
 
-class client_connection_request(BaseModel):
+class client_connection_re(BaseModel):#basic response/request class model
     arg1: str
-
-
-class client_connection_response(BaseModel):
-    arg2: str
 
 
 # END CLASSES
@@ -60,25 +56,21 @@ async def start_up():
     except FileNotFoundError:
         print("Error: rooms.txt not found, creating default room")
         room_manager.add_room('default')
+    else:
+        while True:
+            #read in each room name 
+            content = file.readline().strip().replace(' ', '_')
+            #if file done, break out 
+            if not content:
+                break
+            #create rooms
+            room_manager.add_room(content)
+        file.close()
+    finally:
+        #rooms being built
         print("Building rooms...:")
         for room in room_manager.rooms:
             print(room.name)
-        return
-
-    while True:
-        #read in each room name 
-        content = file.readline().strip().replace(' ', '_')
-        #if file done, break out 
-        if not content:
-            break
-        #create rooms
-        room_manager.add_room(content)
-    file.close()
-    
-    #rooms being built
-    print("Building rooms...:")
-    for room in room_manager.rooms:
-        print(room.name)
 
 
 @app.websocket("/ws_connect")
@@ -120,13 +112,18 @@ async def establish_listener(websocket: WebSocket):
 def read_root():
     return {"hi": "mark"}
 
+@app.post("/client_room")
+def get_client_room(): #given a clients identifier, return what room they're in
+    pass
+    
 
-@app.post("/connection_attempt", response_model=client_connection_response)
-async def connection_request(request: client_connection_request):  # receive a connection request from the client
+
+@app.post("/connection_attempt", response_model=client_connection_re)
+async def connection_request(request: client_connection_re):  # receive a connection request from the client
     if request.arg1 == CLIENT_INIT_CONNECTION_MESSAGE:
-        return client_connection_response(arg2=SERVER_INIT_CONNECTION_RESPONSE)
+        return client_connection_re(arg1=SERVER_INIT_CONNECTION_RESPONSE)
     else:
-        return client_connection_response(arg2=SERVER_INIT_CONNECTION_RESPONSE_BAD)
+        return client_connection_re(arg1=SERVER_INIT_CONNECTION_RESPONSE_BAD)
 
 #interpret and handles a message from the client
 async def interpret_message(client: Client, message: str):
