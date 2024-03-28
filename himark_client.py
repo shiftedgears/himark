@@ -18,6 +18,7 @@ SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 
 WS_SERVER_ADDR = f"ws://{ip}:{port}/ws_connect"
 WS_GET_ROOM_SERVER_ADD = f"ws://{ip}:{port}/client_room"
+WS_GET_ROOM_USER_LIST = f"ws://{ip}:{port}/ws_user_list"
 CONNECT_SERVER_ADDR = f"http://{ip}:{port}/connection_attempt"
 
 class Client_Connection:
@@ -30,6 +31,7 @@ class Client_Connection:
             sys.exit(f"There is no himark server running on {ip}:{port}")
 
         self.ws = 0
+        self.ws_list = 0
         self.textual_obj = textual_obj
 
     async def wait_for_messages(self):
@@ -53,6 +55,8 @@ class Client_Connection:
     async def main(self):
         async with websockets.connect(WS_SERVER_ADDR) as self.ws:
             await asyncio.create_task(self.wait_for_messages()) #task for waiting for messages
+            async with websockets.connect(WS_GET_ROOM_USER_LIST) as self.ws_list:
+                pass
 
 
 class Client(App):

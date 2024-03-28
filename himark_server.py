@@ -107,6 +107,10 @@ async def establish_listener(websocket: WebSocket):
         conn_manager.disconnect(new_client)
         room_manager.remove_client(new_client)
 
+@app.websocket("/ws_user_list")
+async def users_in_room(websocket: WebSocket, uid: str):
+    #have a connection for this client that keeps an updated list of users in the room
+    #they are currently in
 
 @app.get("/")
 def read_root():
