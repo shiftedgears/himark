@@ -20,7 +20,7 @@ class ConnectionManager:
 
     async def send_msg(self, client: Client, message: str):
         await client.websock.send_text(message)
-        print("[WS] Message sent to Client")
+        print(f"[WS] Message sent to Client: {message}")
 
     def disconnect(self, client: Client):
         self.active_conn.remove(client)

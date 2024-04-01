@@ -33,12 +33,14 @@ class Client_Connection:
         self.ws = 0
         self.ws_list = 0
         self.textual_obj = textual_obj
+        self.id = str()
 
     async def wait_for_messages(self):
         try:
+            self.id = await self.ws.recv()
+
             while True:
                 recv = await self.ws.recv() #wait for a message
-
                 self.textual_obj.query_one('#message_box').append(ListItem(Label(recv)))
         except WebSocketException:
             sys.exit("WebSocket error occured")
