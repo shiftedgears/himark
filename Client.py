@@ -19,6 +19,9 @@ class Client:
 
     def set_data_websock(self, data_websock):
         self.data_websock = data_websock
+        
+    def get_data_websock(self) -> WebSocket:
+        return self.data_websock
 
     def get_name(self) -> str:
         return self.name

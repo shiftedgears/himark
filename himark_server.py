@@ -108,16 +108,39 @@ async def establish_listener(websocket: WebSocket):
         await room_manager.remove_client(new_client)
 
 @app.websocket("/ws_user_list")
-async def users_in_room(websocket: WebSocket, uid: str):
+async def users_in_room(websocket: WebSocket):
     #have a connection for this client that keeps an updated list of users in the room
     #they are currently in
     #when this client connects, we want to associate this new websocket with the existing client
+    try:
+        await conn_manager.data_connect(websocket) #accept the connection on this data websocket
+        #client has accepted the connection. the first message received will be this users ID
+        t_uid = await websocket.receive_text()
+        
+        #get the list of clients
+        clients_list = conn_manager.active_clients()
+        client = None
+        
+        for c in clients_list:
+            if c.iden == t_uid:
+                c.set_data_websock(websocket)
+                client = c
+                break
+            
+        if not client: #if we did not find the client with this id
+            raise WebSocketDisconnect
+        
+        #otherwise, c is the client that is connected on websocket and their data socket has been
+        #set successfully
+        
+        while True:
+            #maintain the connection. other functions will use the data websocket
+            pass
+    
+    
+    except WebSocketDisconnect:
+        print("Could not connect a clients data web socket")
 
-    #in the room manager, update client with id uid's data websock to websocket
-    print("we are in the users_in_room func")
-
-    #we want to observer the rooms list
-    pass
 
 @app.get("/")
 def read_root():
