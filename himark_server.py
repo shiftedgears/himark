@@ -7,7 +7,7 @@ from Client import Client
 from Room import Room
 from RoomManager import RoomManager
 import uuid
-
+import json
 import asyncio
 import websockets
 
@@ -92,6 +92,7 @@ async def establish_listener(websocket: WebSocket):
     try:
         while True:
             if not name_established:
+                await conn_manager.send_msg(new_client, str(new_id))
                 await conn_manager.send_msg(new_client, ASK_USERNAME)
                 user_name = await new_client.get_socket().receive_text()
                 new_client.set_name(user_name)
