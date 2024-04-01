@@ -19,19 +19,24 @@ CLIENT_INIT_CONNECTION_MESSAGE = "HIMARK"
 SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 
 WS_SERVER_ADDR = f"ws://{ip}:{port}/ws_connect"
+WS_GET_ROOM_SERVER_ADD = f"ws://{ip}:{port}/client_room"
+WS_GET_ROOM_USER_LIST = f"ws://{ip}:{port}/ws_user_list"
 CONNECT_SERVER_ADDR = f"http://{ip}:{port}/connection_attempt"
+
 class Client_Connection:
 
     def __init__(self, textual_obj):
         #attempt connection. if it works, continue. otherwise sys exit
         response = requests.post(CONNECT_SERVER_ADDR, json={"arg1":CLIENT_INIT_CONNECTION_MESSAGE})
 
-        if(response.json() != {'arg2':SERVER_INIT_CONNECTION_RESPONSE}):
+        if(response.json() != {'arg1':SERVER_INIT_CONNECTION_RESPONSE}):
             sys.exit(f"There is no himark server running on {ip}:{port}")
 
         self.ws = 0
+        self.ws_list = 0
         self.textual_obj = textual_obj
-    
+
+        self.id = str()
 
     #send json to server
     #currenly same port as old one, potentially change
@@ -52,12 +57,12 @@ class Client_Connection:
         except websockets.exceptions.WebSocketException:
             sys.exit("WebSocket error occurred")
 
-
     async def wait_for_messages(self):
         try:
+            self.id = await self.ws.recv()
+
             while True:
                 recv = await self.ws.recv() #wait for a message
-
                 self.textual_obj.query_one('#message_box').append(ListItem(Label(recv)))
         except WebSocketException:
             sys.exit("WebSocket error occured")
@@ -69,11 +74,24 @@ class Client_Connection:
             raise ConnectionClosed
         else:
             await self.ws.send(txt)
+            
+    async def update_user_list(self):
+        try:
+            while True:
+                recv = await self.ws_list.recv() #wait for a message
+
+                self.textual_obj.query_one('#message_box').append(ListItem(Label(recv)))
+        except WebSocketException:
+            sys.exit("WebSocket error occured")
+        except asyncio.CancelledError:
+            sys.exit("User cancelled")
 
 
     async def main(self):
         async with websockets.connect(WS_SERVER_ADDR) as self.ws:
             await asyncio.create_task(self.wait_for_messages()) #task for waiting for messages
+            async with websockets.connect(WS_GET_ROOM_USER_LIST) as self.ws_list:
+                await asyncio.create_task(self.update_user_list())
 
 
 class Client(App):

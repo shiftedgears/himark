@@ -7,7 +7,6 @@ from Client import Client
 from Room import Room
 from RoomManager import RoomManager
 import uuid
-
 import asyncio
 import websockets
 
@@ -36,12 +35,8 @@ CHANGE_ROOM = r"\r"
 
 # CLASSES
 
-class client_connection_request(BaseModel):
+class client_connection_re(BaseModel):#basic response/request class model
     arg1: str
-
-
-class client_connection_response(BaseModel):
-    arg2: str
 
 
 # END CLASSES
@@ -62,25 +57,21 @@ async def start_up():
     except FileNotFoundError:
         print("Error: rooms.txt not found, creating default room")
         room_manager.add_room('default')
+    else:
+        while True:
+            #read in each room name 
+            content = file.readline().strip().replace(' ', '_')
+            #if file done, break out 
+            if not content:
+                break
+            #create rooms
+            room_manager.add_room(content)
+        file.close()
+    finally:
+        #rooms being built
         print("Building rooms...:")
         for room in room_manager.rooms:
             print(room.name)
-        return
-
-    while True:
-        #read in each room name 
-        content = file.readline().strip().replace(' ', '_')
-        #if file done, break out 
-        if not content:
-            break
-        #create rooms
-        room_manager.add_room(content)
-    file.close()
-    
-    #rooms being built
-    print("Building rooms...:")
-    for room in room_manager.rooms:
-        print(room.name)
 
 
 @app.websocket("/ws_connect")
@@ -94,6 +85,7 @@ async def establish_listener(websocket: WebSocket):
     try:
         while True:
             if not name_established:
+                await conn_manager.send_msg(new_client, str(new_id))
                 await conn_manager.send_msg(new_client, ASK_USERNAME)
                 user_name = await new_client.get_socket().receive_text()
                 new_client.set_name(user_name)
@@ -104,7 +96,7 @@ async def establish_listener(websocket: WebSocket):
                         await conn_manager.send_msg(new_client, ROOM_NOT_FOUND)
                         desired_room = await new_client.get_socket().receive_text()
                     else:
-                        room_manager.add_client(new_client, desired_room)
+                        await room_manager.add_client(new_client, desired_room)
                         found_room = True
                 print(f"New connection!: {new_client}")
                 await conn_manager.send_msg(new_client, f"==== JOINED THE ROOM {desired_room} ====")
@@ -115,8 +107,19 @@ async def establish_listener(websocket: WebSocket):
             await interpret_message(new_client, data)
     except WebSocketDisconnect:
         conn_manager.disconnect(new_client)
-        room_manager.remove_client(new_client)
+        await room_manager.remove_client(new_client)
 
+@app.websocket("/ws_user_list")
+async def users_in_room(websocket: WebSocket, uid: str):
+    #have a connection for this client that keeps an updated list of users in the room
+    #they are currently in
+    #when this client connects, we want to associate this new websocket with the existing client
+
+    #in the room manager, update client with id uid's data websock to websocket
+    print("we are in the users_in_room func")
+
+    #we want to observer the rooms list
+    pass
 
 #websocket for receiving json contents
 @app.websocket("/ws_info")
@@ -141,13 +144,12 @@ async def info_websocket_endpoint(websocket: WebSocket):
 def read_root():
     return {"hi": "mark"}
 
-
-@app.post("/connection_attempt", response_model=client_connection_response)
-async def connection_request(request: client_connection_request):  # receive a connection request from the client
+@app.post("/connection_attempt", response_model=client_connection_re)
+async def connection_request(request: client_connection_re):  # receive a connection request from the client
     if request.arg1 == CLIENT_INIT_CONNECTION_MESSAGE:
-        return client_connection_response(arg2=SERVER_INIT_CONNECTION_RESPONSE)
+        return client_connection_re(arg1=SERVER_INIT_CONNECTION_RESPONSE)
     else:
-        return client_connection_response(arg2=SERVER_INIT_CONNECTION_RESPONSE_BAD)
+        return client_connection_re(arg1=SERVER_INIT_CONNECTION_RESPONSE_BAD)
 
 #interpret and handles a message from the client
 async def interpret_message(client: Client, message: str):
