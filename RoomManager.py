@@ -30,6 +30,7 @@ class RoomManager(RoomObserver):
         for room in self.rooms:
             if room.name == room_name:
                 self.rooms.remove(room_name)
+                self.detach(room_name)
                 return True
 
         return False
@@ -51,7 +52,7 @@ class RoomManager(RoomObserver):
     # attempts to append a user to a room.
     # returns true on success, or false on failure
     # when we add a client to this room, notify the observer
-    def add_client(self, client: Client, room_name: str) -> bool:
+    async def add_client(self, client: Client, room_name: str) -> bool:
         room = self.find_room(room_name)
         if room is None:
             print("cannot find room")
@@ -59,7 +60,7 @@ class RoomManager(RoomObserver):
 
         if client not in room.clients:
             room.clients.append(client)
-            self.notify(room_name) #notify the clients of this room via RoomObserver
+            await self.notify(room_name) #notify the clients of this room via RoomObserver
             return True
         else:
             return False
@@ -68,13 +69,13 @@ class RoomManager(RoomObserver):
     # removes a client from the server.
     # Returns true on success, otherwise false.
     # when we remove a client from this room, notify the observer
-    def remove_client(self, client: Client) -> bool:
+    async def remove_client(self, client: Client) -> bool:
         room = self.find_client_room(client)
         if room is None:
             return False
         else:
             room.remove_client(client)
-            self.notify(room_name) #notify the clients of this room via RoomObserver
+            await self.notify(room.name) #notify the clients of this room via RoomObserver
             return True
 
     # find_client_room(client_name: str)

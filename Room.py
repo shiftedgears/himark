@@ -11,10 +11,10 @@ class RoomObserver:
     #on notification (room added/removed a client)
     #loop through all the observers and update them
     #each observer is a room object
-    def notify(self, room_name: list):
+    async def notify(self, room_name: list):
         for o in self.observers:
             if o.name == room_name: #when we find this room
-                o.update(self) #call its update function
+                await o.update() #call its update function
 
     # Attach an observer to the RoomObserver
     def attach(self, observer):
@@ -23,7 +23,9 @@ class RoomObserver:
 
     def detach(self, observer):
         try:
-            self.observers.remove(observer)
+            for o in self.observers:
+                if o.room_name == observer:
+                    self.observers.remove(o)
         except:
             print("{observer} not in list")
 
@@ -45,7 +47,6 @@ class Room:
     def add_client(self, client: Client) -> bool:
         if client not in self.clients:
             self.clients.append(client)
-            self.notify()
             return True
         else:
             print("User already in List")
@@ -54,7 +55,6 @@ class Room:
     def remove_client(self, client: Client) -> bool:
         if client in self.clients:
             self.clients.remove(client)
-            self.notify()
             return True
         else:
             print("No user found")

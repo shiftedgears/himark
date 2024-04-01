@@ -50,13 +50,24 @@ class Client_Connection:
             raise ConnectionClosed
         else:
             await self.ws.send(txt)
+            
+    async def update_user_list(self):
+        try:
+            while True:
+                recv = await self.ws_list.recv() #wait for a message
+
+                self.textual_obj.query_one('#message_box').append(ListItem(Label(recv)))
+        except WebSocketException:
+            sys.exit("WebSocket error occured")
+        except asyncio.CancelledError:
+            sys.exit("User cancelled")
 
 
     async def main(self):
         async with websockets.connect(WS_SERVER_ADDR) as self.ws:
             await asyncio.create_task(self.wait_for_messages()) #task for waiting for messages
             async with websockets.connect(WS_GET_ROOM_USER_LIST) as self.ws_list:
-                pass
+                await asyncio.create_task(self.update_user_list())
 
 
 class Client(App):

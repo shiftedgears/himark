@@ -95,7 +95,7 @@ async def establish_listener(websocket: WebSocket):
                         await conn_manager.send_msg(new_client, ROOM_NOT_FOUND)
                         desired_room = await new_client.get_socket().receive_text()
                     else:
-                        room_manager.add_client(new_client, desired_room)
+                        await room_manager.add_client(new_client, desired_room)
                         found_room = True
                 print(f"New connection!: {new_client}")
                 await conn_manager.send_msg(new_client, f"==== JOINED THE ROOM {desired_room} ====")
@@ -106,7 +106,7 @@ async def establish_listener(websocket: WebSocket):
             await interpret_message(new_client, data)
     except WebSocketDisconnect:
         conn_manager.disconnect(new_client)
-        room_manager.remove_client(new_client)
+        await room_manager.remove_client(new_client)
 
 @app.websocket("/ws_user_list")
 async def users_in_room(websocket: WebSocket, uid: str):
@@ -115,7 +115,7 @@ async def users_in_room(websocket: WebSocket, uid: str):
     #when this client connects, we want to associate this new websocket with the existing client
 
     #in the room manager, update client with id uid's data websock to websocket
-
+    print("we are in the users_in_room func")
 
     #we want to observer the rooms list
     pass
