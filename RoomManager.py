@@ -1,9 +1,10 @@
 from Client import Client
-from Room import Room
+from Room import Room, RoomObserver
 
+class RoomManager(RoomObserver):
 
-class RoomManager:
     def __init__(self):
+        RoomObserver.__init__(self)
         self.rooms = []
         
     # when called, prints out a list of all the rooms in the room manager
@@ -29,6 +30,7 @@ class RoomManager:
         for room in self.rooms:
             if room.name == room_name:
                 self.rooms.remove(room_name)
+                self.detach(room_name)
                 return True
 
         return False
@@ -36,18 +38,21 @@ class RoomManager:
     # add_room(room_name: str)
     # attempts to add a new room to the rooms list
     # returns true on success, false on failure
+    # when we add a room, attach an observer to that room
     def add_room(self, room_name: str) -> bool:
         if self.find_room(room_name):
             print(f"Error: Room '{room_name}' already Exists")
             return False
         else:
             self.rooms.append(Room(room_name))
+            self.attach(Room(room_name))
             return True
 
     # add_client(client_name: str, room_name: str)
     # attempts to append a user to a room.
     # returns true on success, or false on failure
-    def add_client(self, client: Client, room_name: str) -> bool:
+    # when we add a client to this room, notify the observer
+    async def add_client(self, client: Client, room_name: str) -> bool:
         room = self.find_room(room_name)
         if room is None:
             print("cannot find room")
@@ -55,6 +60,7 @@ class RoomManager:
 
         if client not in room.clients:
             room.clients.append(client)
+            await self.notify(room_name) #notify the clients of this room via RoomObserver
             return True
         else:
             return False
@@ -62,12 +68,14 @@ class RoomManager:
     # remove_client(name: str, room_name: str)
     # removes a client from the server.
     # Returns true on success, otherwise false.
-    def remove_client(self, client: Client) -> bool:
+    # when we remove a client from this room, notify the observer
+    async def remove_client(self, client: Client) -> bool:
         room = self.find_client_room(client)
         if room is None:
             return False
         else:
             room.remove_client(client)
+            await self.notify(room.name) #notify the clients of this room via RoomObserver
             return True
 
     # find_client_room(client_name: str)
