@@ -8,6 +8,7 @@ from Room import Room
 from RoomManager import RoomManager
 import uuid
 
+
 import asyncio
 import websockets
 
@@ -111,16 +112,17 @@ async def establish_listener(websocket: WebSocket):
 async def users_in_room(websocket: WebSocket, uid: str):
     #have a connection for this client that keeps an updated list of users in the room
     #they are currently in
+    #when this client connects, we want to associate this new websocket with the existing client
+
+    #in the room manager, update client with id uid's data websock to websocket
+
+
+    #we want to observer the rooms list
+    pass
 
 @app.get("/")
 def read_root():
     return {"hi": "mark"}
-
-@app.post("/client_room")
-def get_client_room(): #given a clients identifier, return what room they're in
-    pass
-    
-
 
 @app.post("/connection_attempt", response_model=client_connection_re)
 async def connection_request(request: client_connection_re):  # receive a connection request from the client
