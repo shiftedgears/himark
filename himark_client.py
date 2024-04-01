@@ -34,7 +34,7 @@ class Client_Connection:
     
 
     #send json to server
-    #currenly same port as old one, mpotentially change
+    #currenly same port as old one, potentially change
     async def connect_to_ws_info(self):
         try:
             async with websockets.connect(WS_SERVER_ADDR) as self.ws:
