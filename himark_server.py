@@ -11,6 +11,8 @@ import uuid
 import asyncio
 import websockets
 
+import json
+
 app = FastAPI()
 
 # BEGINNING OF MACROS TO BE USED
@@ -115,6 +117,25 @@ async def establish_listener(websocket: WebSocket):
         conn_manager.disconnect(new_client)
         room_manager.remove_client(new_client)
 
+
+#websocket for receiving json contents
+@app.websocket("/ws_info")
+async def info_websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    
+    try:
+        while True:
+            #placeholders, switch later
+            data = await websocket.receive_text()
+            message = json.loads(data)
+            user_id = message["user_id"]
+            request = message["request"]
+            print(f"Received request from user {user_id}: {request}")
+            
+            #do whatever with request
+
+    except WebSocketDisconnect:
+        pass
 
 @app.get("/")
 def read_root():

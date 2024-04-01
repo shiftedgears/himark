@@ -9,6 +9,8 @@ from textual import on
 from textual.app import App, ComposeResult
 from textual.widgets import Input, Label, ListView, ListItem, Header
 
+import json
+
 
 ip = "127.0.0.1"
 port = "8000"
@@ -29,6 +31,27 @@ class Client_Connection:
 
         self.ws = 0
         self.textual_obj = textual_obj
+    
+
+    #send json to server
+    #currenly same port as old one, mpotentially change
+    async def connect_to_ws_info(self):
+        try:
+            async with websockets.connect(WS_SERVER_ADDR) as self.ws:
+                #Once connected, send the user ID and request
+                user_id = self.id 
+                request = " "   # Replace with the actual request
+                message = json.dumps({"user_id": user_id, "request": request})
+                await self.ws.send(message)
+                print(f"Sent message: {message}")
+
+                # Wait for messages from the WebSocket server
+                await self.wait_for_messages()
+        except websockets.exceptions.InvalidURI:
+            sys.exit(f"Invalid URI: {WS_SERVER_ADDR}")
+        except websockets.exceptions.WebSocketException:
+            sys.exit("WebSocket error occurred")
+
 
     async def wait_for_messages(self):
         try:
