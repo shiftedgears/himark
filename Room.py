@@ -1,35 +1,5 @@
 from Client import Client
 
-# https://www.geeksforgeeks.org/observer-method-python-design-patterns/
-# https://refactoring.guru/design-patterns/observer/python/example#example-0
-class RoomObserver:
-
-    #create an empty list of observers
-    def __init__(self):
-        self.observers = []
-
-    #on notification (room added/removed a client)
-    #loop through all the observers and update them
-    #each observer is a room object
-    async def notify(self, room_name: list):
-        for o in self.observers:
-            if o.name == room_name: #when we find this room
-                await o.update() #call its update function
-
-    # Attach an observer to the RoomObserver
-    def attach(self, observer):
-        if observer not in self.observers:
-            self.observers.append(observer)
-
-    def detach(self, observer):
-        try:
-            for o in self.observers:
-                if o.room_name == observer:
-                    self.observers.remove(o)
-        except:
-            print("{observer} not in list")
-
-
 class Room:
     def __init__(self, name: str = "default"):
         self.name = name
@@ -39,10 +9,12 @@ class Room:
         return self.clients
 
     #return the list of clients as a string deliminated by \n's
-    def get_formatted_client_list(self):
+    def get_formatted_client_list(self) -> str:
         client_list = str()
         for client in self.clients:
             client_list += client.get_name() + '\n'
+        
+        return client_list[:-1]
 
     def add_client(self, client: Client) -> bool:
         if client not in self.clients:
@@ -73,3 +45,31 @@ class Room:
             #tell them the new list of clients
             await client.data_websock.send_text(self.get_formatted_client_list())
 
+# https://www.geeksforgeeks.org/observer-method-python-design-patterns/
+# https://refactoring.guru/design-patterns/observer/python/example#example-0
+class RoomObserver:
+
+    #create an empty list of observers
+    def __init__(self):
+        self.observers = []
+
+    #on notification (room added/removed a client)
+    #loop through all the observers and update them
+    #each observer is a room object
+    async def notify(self, room: Room):
+        for o in self.observers:
+            if o.name == room.name: #when we find this room
+                await room.update() #call its update function
+
+    # Attach an observer to the RoomObserver
+    def attach(self, observer):
+        if observer not in self.observers:
+            self.observers.append(observer)
+
+    def detach(self, observer):
+        try:
+            for o in self.observers:
+                if o.room_name == observer:
+                    self.observers.remove(o)
+        except:
+            print("{observer} not in list")

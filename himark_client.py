@@ -55,14 +55,15 @@ class Client_Connection:
     async def update_user_list(self):
         async with websockets.connect(WS_GET_ROOM_USER_LIST) as self.ws_list:
             try:
-                while self.id == -1:
+                while self.id == -1: #wait for the id of the user to be set
                     await asyncio.sleep(0.1)
-                self.textual_obj.query_one('#name_box').append(ListItem(Label(self.id)))
-                await self.ws_list.send(self.id) #send the data connection the uid
+                    
+                await self.ws_list.send(self.id) #send the data connection the id of this user
                 
                 while True:
-                    recv = await self.ws_list.recv() #wait for a message
-
+                    recv = await self.ws_list.recv() #wait for a message (which will be the list of users)
+                    self.textual_obj.query_one('#name_box').clear()
+                    self.textual_obj.query_one('#name_box').append(ListItem(Label("Names:")))
                     self.textual_obj.query_one('#name_box').append(ListItem(Label(recv)))
             except WebSocketException:
                 sys.exit("WebSocket error occured")
@@ -70,17 +71,7 @@ class Client_Connection:
                 sys.exit("User cancelled")
 
 
-    async def main(self):
-        """
-        self.textual_obj.query_one('#name_box').append(ListItem(Label("main")))
-        async with websockets.connect(WS_SERVER_ADDR) as self.ws:
-            self.textual_obj.query_one('#name_box').append(ListItem(Label("wait")))
-            await asyncio.create_task(self.wait_for_messages()) #task for waiting for messages
-            self.textual_obj.query_one('#name_box').append(ListItem(Label("list")))
-            async with websockets.connect(WS_GET_ROOM_USER_LIST) as self.ws_list:
-                        await asyncio.create_task(self.update_user_list())
-        """
-        
+    async def main(self):        
         await asyncio.gather(
             self.wait_for_messages(),
             self.update_user_list())
