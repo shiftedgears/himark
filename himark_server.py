@@ -7,7 +7,6 @@ from Client import Client
 from Room import Room
 from RoomManager import RoomManager
 import uuid
-
 import asyncio
 import websockets
 
@@ -34,12 +33,8 @@ CHANGE_ROOM = r"\r"
 
 # CLASSES
 
-class client_connection_request(BaseModel):
+class client_connection_re(BaseModel):#basic response/request class model
     arg1: str
-
-
-class client_connection_response(BaseModel):
-    arg2: str
 
 
 # END CLASSES
@@ -60,25 +55,21 @@ async def start_up():
     except FileNotFoundError:
         print("Error: rooms.txt not found, creating default room")
         room_manager.add_room('default')
+    else:
+        while True:
+            #read in each room name 
+            content = file.readline().strip().replace(' ', '_')
+            #if file done, break out 
+            if not content:
+                break
+            #create rooms
+            room_manager.add_room(content)
+        file.close()
+    finally:
+        #rooms being built
         print("Building rooms...:")
         for room in room_manager.rooms:
             print(room.name)
-        return
-
-    while True:
-        #read in each room name 
-        content = file.readline().strip().replace(' ', '_')
-        #if file done, break out 
-        if not content:
-            break
-        #create rooms
-        room_manager.add_room(content)
-    file.close()
-    
-    #rooms being built
-    print("Building rooms...:")
-    for room in room_manager.rooms:
-        print(room.name)
 
 
 @app.websocket("/ws_connect")
@@ -92,6 +83,7 @@ async def establish_listener(websocket: WebSocket):
     try:
         while True:
             if not name_established:
+                await conn_manager.send_msg(new_client, str(new_id))
                 await conn_manager.send_msg(new_client, ASK_USERNAME)
                 user_name = await new_client.get_socket().receive_text()
                 new_client.set_name(user_name)
@@ -102,7 +94,7 @@ async def establish_listener(websocket: WebSocket):
                         await conn_manager.send_msg(new_client, ROOM_NOT_FOUND)
                         desired_room = await new_client.get_socket().receive_text()
                     else:
-                        room_manager.add_client(new_client, desired_room)
+                        await room_manager.add_client(new_client, desired_room)
                         found_room = True
                 print(f"New connection!: {new_client}")
                 await conn_manager.send_msg(new_client, f"==== JOINED THE ROOM {desired_room} ====")
@@ -113,28 +105,53 @@ async def establish_listener(websocket: WebSocket):
             await interpret_message(new_client, data)
     except WebSocketDisconnect:
         conn_manager.disconnect(new_client)
-        room_manager.remove_client(new_client)
+        await room_manager.remove_client(new_client)
 
+@app.websocket("/ws_user_list")
+async def users_in_room(websocket: WebSocket):
+    #have a connection for this client that keeps an updated list of users in the room
+    #they are currently in
+    #when this client connects, we want to associate this new websocket with the existing client
+    try:
+        await conn_manager.data_connect(websocket) #accept the connection on this data websocket
+        #client has accepted the connection. the first message received will be this users ID
+        t_uid = await websocket.receive_text()
+        
+        #get the list of clients
+        clients_list = conn_manager.active_clients()
+        client = None
+        
+        for c in clients_list:
+            if c.iden == t_uid:
+                c.set_data_socket(websocket)
+                client = c
+                break
+            
+        if not client: #if we did not find the client with this id
+            raise WebSocketDisconnect
+        
+        #otherwise, c is the client that is connected on websocket and their data socket has been
+        #set successfully
+        while True:
+            d = await client.get_data_socket().receive_text()
+            print(f"{d}")
+    except WebSocketDisconnect:
+        pass
 
-@app.get("/")
-def read_root():
-    return {"hi": "mark"}
-
-
-@app.post("/connection_attempt", response_model=client_connection_response)
-async def connection_request(request: client_connection_request):  # receive a connection request from the client
+@app.post("/connection_attempt", response_model=client_connection_re)
+async def connection_request(request: client_connection_re):  # receive a connection request from the client
     if request.arg1 == CLIENT_INIT_CONNECTION_MESSAGE:
-        return client_connection_response(arg2=SERVER_INIT_CONNECTION_RESPONSE)
+        return client_connection_re(arg1=SERVER_INIT_CONNECTION_RESPONSE)
     else:
-        return client_connection_response(arg2=SERVER_INIT_CONNECTION_RESPONSE_BAD)
+        return client_connection_re(arg1=SERVER_INIT_CONNECTION_RESPONSE_BAD)
 
 #interpret and handles a message from the client
 async def interpret_message(client: Client, message: str):
     #we want to parse the message to see if there is a command the user is issuing
-    if(message.startswith(LIST_SERVER_ROOMS)): #if the request from the user is to list rooms
-        room_manager.list_rooms() #this will list the rooms in this room manager
+    if(message.lower().startswith(LIST_SERVER_ROOMS)): #if the request from the user is to list rooms
+        await conn_manager.send_msg(client, room_manager.get_rooms()) #this will list the rooms in this room manager
         
-    elif(message.startswith(CHANGE_NAME)): #if user wants to change their name 
+    elif(message.lower().startswith(CHANGE_NAME)): #if user wants to change their name
         args = message.split() #split the message into a list
         #args[0] is CHANGE_NAME
         #args[1] is the new name. anything after the name is not considered part of the name
@@ -145,15 +162,15 @@ async def interpret_message(client: Client, message: str):
         except IndexError:
             await conn_manager.send_msg(client, NO_NAME_PROVIDED)
     
-    elif(message.startswith(CHANGE_ROOM)): #if client wants to change what room they're in
+    elif(message.lower().startswith(CHANGE_ROOM)): #if client wants to change what room they're in
         args = message.split() #split the message into a list
         #args[0] is CHANGE_ROOM
         #args[1] is the room
         try:
             if args[1]: #if there was a second argument
                 if room_manager.find_room(args[1]): #if a room of name args[1] exists
-                    room_manager.remove_clien(client)
-                    room_manager.add_client(client, args[1])
+                    await room_manager.remove_client(client)
+                    await room_manager.add_client(client, args[1])
                     await conn_manager.send_msg(client, f"==== CHANGE ROOM TO {args[1]} ====")
                 else: #no room exists, tell user
                     await conn_manager.send_msg(client, ROOM_NOT_FOUND)
