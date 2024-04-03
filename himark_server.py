@@ -186,3 +186,26 @@ async def interpret_message(client: Client, message: str):
         room = room_manager.find_client_room(client)
         await conn_manager.broadcast(room, f"{client.get_name()}: {message}")
         
+@app.websocket("/ws_info")
+async def websocket_endpoint(websocket: WebSocket):
+    try:
+        await conn_manager.info_connect(websocket) 
+        user_data = await websocket.receive_text()
+         
+        clients_list = conn_manager.active_clients()
+        client = None
+        
+        for c in clients_list:
+            if c.iden == user_data:
+                c.set_info_socket(websocket)
+                client = c
+                break
+            
+        if not client: #if we did not find the client with this id
+            raise WebSocketDisconnect
+
+        while True:
+            data = await client.get_info_socket().recieve_text()
+
+    except WebSocketDisconnect:
+        pass

@@ -59,6 +59,7 @@ class RoomManager(RoomObserver):
 
         if client not in room.clients:
             room.add_client(client)
+            await client.info_websock.send_text(room.name)
             await self.notify(room) #notify the clients of this room via RoomObserver
             return True
         else:

@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import Room
 import Client
@@ -19,6 +20,10 @@ class ConnectionManager:
         await ws.accept()
         print("[WS] Data Connection Accepted")
 
+    async def info_connect(self, ws : WebSocket):
+        await ws.accept()
+        print("[WS] Info Connection Accepted")
+
     async def broadcast(self, room: Room, message: str):
         print("[WS] Broadcasting to Clients...", end="")
         for client in room.get_client_list():
@@ -31,6 +36,8 @@ class ConnectionManager:
         
     def active_clients(self) -> list:
         return self.active_conn
+
+
 
     #working on
     def find_client_by_id(self, user_id: str):
@@ -55,14 +62,3 @@ class ConnectionManager:
     def disconnect(self, client: Client):
         self.active_conn.remove(client)
         print("[WS] Client disconnected")
-
-#working on
-@app.websocket("/ws_info")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    client = Client(websocket)
-    await ConnectionManager.connect(client)
-
-@app.post("/get_room_info/{user_id}")
-async def get_room_info(user_id: str):
-    await ConnectionManager.send_room_info(user_id)

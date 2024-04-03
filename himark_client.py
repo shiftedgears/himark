@@ -43,19 +43,19 @@ class Client_Connection:
         self.ws_info = 0
         self.id = -1
         
-    #send json to server
-    #currenly same port as old one, potentially change
     async def connect_to_ws_info(self):
         try:
             async with websockets.connect(WS_INFO_ADDR) as self.ws_info:
-                #Once connected, send the user ID and request
+                while self.id == -1:   
+                    await asyncio.sleep(0.1)
+                    
                 user_id = self.id 
-                message = json.dumps({"user_id": user_id})
-                await self.ws.send(message)
-                print(f"Sent message: {message}")
+                await self.ws.send(user_id)
 
-                # Wait for messages from the WebSocket server
-                await self.wait_for_messages()
+                while True:
+                    data = self.ws_info.recv()
+                    self.textual_obj.SUBTITLE = data
+
         except websockets.exceptions.InvalidURI:
             sys.exit(f"Invalid URI: {WS_INFO_ADDR}")
         except websockets.exceptions.WebSocketException:
@@ -103,12 +103,16 @@ class Client_Connection:
     async def main(self):        
         await asyncio.gather(
             self.wait_for_messages(),
-            self.update_user_list())
+            self.update_user_list(),
+            self.connect_to_ws_info()
+            )
+
                 
 
 class Client(App):
     LOG_FILE = ".himark.log"
     TITLE = "himark"
+    SUBTITLE = ""
 
     BINDINGS = [("\l", "None", "List Rooms"), (r"\n [NAME]", "NONE", "Change name"), (r"\r [ROOM]", "NONEE", "Change room")]
 
