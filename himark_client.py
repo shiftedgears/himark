@@ -1,3 +1,5 @@
+from ast import parse
+import re
 import requests
 from requests.exceptions import ConnectionError
 from pydantic import BaseModel
@@ -22,6 +24,8 @@ WS_SERVER_ADDR = f"ws://{ip}:{port}/ws_connect"
 WS_GET_ROOM_SERVER_ADD = f"ws://{ip}:{port}/client_room"
 WS_GET_ROOM_USER_LIST = f"ws://{ip}:{port}/ws_user_list"
 CONNECT_SERVER_ADDR = f"http://{ip}:{port}/connection_attempt"
+
+
 
 class Client_Connection:
 
