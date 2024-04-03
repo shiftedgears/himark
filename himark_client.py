@@ -45,6 +45,8 @@ class Client_Connection:
                 sys.exit("WebSocket error occured")
             except asyncio.CancelledError:
                 sys.exit("User cancelled")
+            except asyncio.exceptions.CancelledError:
+                sys.exit("User cancelled")
 
     async def send_message(self, txt):
         if txt == "exit": #tell the server we are disconnecting
@@ -78,7 +80,6 @@ class Client_Connection:
                 
 
 class Client(App):
-    CSS_PATH = "client.tcss"
     LOG_FILE = ".himark.log"
     TITLE = "himark"
 
@@ -94,9 +95,25 @@ class Client(App):
         input.value = "" #clear input
 
     def compose(self) -> ComposeResult:
+        self.screen.layout = "grid"
+        self.screen.grid_size = 2
+        self.screen.grid_columns = "80% 20%"
+        self.screen.grid_rows = "80% 20%"
+
         yield Header()
-        yield ListView(classes="box", id="message_box") #box to put messages in
-        yield ListView(classes="names", id="name_box") #box to put connected users in
+
+        self.message_box = ListView(classes="box", id="message_box") #box to put messages in
+        yield self.message_box
+        self.message_box.styles.height = "90%"
+        self.message_box.styles.border = ("solid", "green")
+        self.message_box.styles.text_align = "center"
+
+        self.name_box = ListView(classes="names", id="name_box") #box to put connected users in
+        yield self.name_box
+        self.name_box.styles.dock = "right"
+        self.name_box.styles.width = "15%"
+        self.name_box.styles.height = "70%"
+
         yield Input(placeholder=">", type="text") #box to capture input. on submit we call send_message
 
         try:
