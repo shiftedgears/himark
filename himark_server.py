@@ -148,10 +148,10 @@ async def connection_request(request: client_connection_re):  # receive a connec
 #interpret and handles a message from the client
 async def interpret_message(client: Client, message: str):
     #we want to parse the message to see if there is a command the user is issuing
-    if(message.startswith(LIST_SERVER_ROOMS)): #if the request from the user is to list rooms
+    if(message.lower().startswith(LIST_SERVER_ROOMS)): #if the request from the user is to list rooms
         await conn_manager.send_msg(client, room_manager.get_rooms()) #this will list the rooms in this room manager
         
-    elif(message.startswith(CHANGE_NAME)): #if user wants to change their name 
+    elif(message.lower().startswith(CHANGE_NAME)): #if user wants to change their name
         args = message.split() #split the message into a list
         #args[0] is CHANGE_NAME
         #args[1] is the new name. anything after the name is not considered part of the name
@@ -162,7 +162,7 @@ async def interpret_message(client: Client, message: str):
         except IndexError:
             await conn_manager.send_msg(client, NO_NAME_PROVIDED)
     
-    elif(message.startswith(CHANGE_ROOM)): #if client wants to change what room they're in
+    elif(message.lower().startswith(CHANGE_ROOM)): #if client wants to change what room they're in
         args = message.split() #split the message into a list
         #args[0] is CHANGE_ROOM
         #args[1] is the room

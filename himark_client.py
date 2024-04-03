@@ -7,7 +7,7 @@ from websockets.exceptions import ConnectionClosed, WebSocketException
 import sys
 from textual import on
 from textual.app import App, ComposeResult
-from textual.widgets import Input, Label, ListView, ListItem, Header
+from textual.widgets import Input, Label, ListView, ListItem, Header, Footer
 
 
 ip = "127.0.0.1"
@@ -50,7 +50,7 @@ class Client_Connection:
 
     async def send_message(self, txt):
         if txt == "exit": #tell the server we are disconnecting
-            raise ConnectionClosed
+            raise ConnectionClosed(1, 2) #passing 1, 2 as arguments because they're needed
         else:
             await self.ws.send(txt)
             
@@ -83,13 +83,15 @@ class Client(App):
     LOG_FILE = ".himark.log"
     TITLE = "himark"
 
+    BINDINGS = [("\l", "None", "List Rooms"), (r"\n [NAME]", "NONE", "Change name"), (r"\r [ROOM]", "NONEE", "Change room")]
+
     @on(Input.Submitted)
     async def client_input(self) -> None:
         input = self.query_one(Input) #get the input
 
         try:
             await self.c_conn.send_message(input.value) #send message function from client connection
-        except:
+        except ConnectionClosed:
             sys.exit("Connection Closed by user")
 
         input.value = "" #clear input
@@ -115,6 +117,8 @@ class Client(App):
         self.name_box.styles.height = "70%"
 
         yield Input(placeholder=">", type="text") #box to capture input. on submit we call send_message
+
+        yield Footer()
 
         try:
             self.c_conn = Client_Connection(self)
