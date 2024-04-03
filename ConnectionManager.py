@@ -37,28 +37,6 @@ class ConnectionManager:
     def active_clients(self) -> list:
         return self.active_conn
 
-
-
-    #working on
-    def find_client_by_id(self, user_id: str):
-        for client in self.active_conn:
-            if client.id == user_id:
-                return RoomManager.find_client_room(client.name)
-        return None
-
-    async def send_room_info(self, user_id: str):
-        client = self.find_client_by_id(user_id)
-        if client:
-            room = RoomManager.find_client_room(client)
-            if room:
-                room_name = room.get_name()
-                await self.send_msg(client, f"You are currently in room: {room_name}")
-            else:
-                await self.send_msg(client, "You are not in any room.")
-        else:
-            print(f"[WS] Client not found for user ID: {user_id}")
-        #end of working on
-
     def disconnect(self, client: Client):
         self.active_conn.remove(client)
         print("[WS] Client disconnected")
