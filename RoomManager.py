@@ -7,7 +7,7 @@ class RoomManager(RoomObserver):
         RoomObserver.__init__(self)
         self.rooms = []
         
-    # when called, prints out a list of all the rooms in the room manager
+    # when called, prints out a list of all the rooms in the room manager to the server
     def list_rooms(self) -> None:
         for room in self.rooms:
             print(f"-{room.name}")
@@ -41,7 +41,6 @@ class RoomManager(RoomObserver):
     # when we add a room, attach an observer to that room
     def add_room(self, room_name: str) -> bool:
         if self.find_room(room_name):
-            print(f"Error: Room '{room_name}' already Exists")
             return False
         else:
             self.rooms.append(Room(room_name))
@@ -59,14 +58,14 @@ class RoomManager(RoomObserver):
             return False
 
         if client not in room.clients:
-            room.clients.append(client)
-            await self.notify(room_name) #notify the clients of this room via RoomObserver
+            room.add_client(client)
+            await self.notify(room) #notify the clients of this room via RoomObserver
             return True
         else:
             return False
 
-    # remove_client(name: str, room_name: str)
-    # removes a client from the server.
+    # remove_client(client: Client)
+    # removes a client from the room they are currently in.
     # Returns true on success, otherwise false.
     # when we remove a client from this room, notify the observer
     async def remove_client(self, client: Client) -> bool:
@@ -75,7 +74,7 @@ class RoomManager(RoomObserver):
             return False
         else:
             room.remove_client(client)
-            await self.notify(room.name) #notify the clients of this room via RoomObserver
+            await self.notify(room) #notify the clients of this room via RoomObserver
             return True
 
     # find_client_room(client_name: str)
@@ -104,6 +103,8 @@ class RoomManager(RoomObserver):
     def get_rooms(self):
         room_list = str()
         for room in self.rooms:
-            room_list = room_list + room.get_name()
+            room_list += room.get_name() + '\n '
+            
+        #we'll have one more \n than expected, so we want to trim off the last two characters
 
-        return room_list
+        return room_list[:-2]

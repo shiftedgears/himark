@@ -9,7 +9,7 @@ from websockets.exceptions import ConnectionClosed, WebSocketException
 import sys
 from textual import on
 from textual.app import App, ComposeResult
-from textual.widgets import Input, Label, ListView, ListItem, Header
+from textual.widgets import Input, Label, ListView, ListItem, Header, Footer
 
 import json
 
@@ -21,7 +21,6 @@ CLIENT_INIT_CONNECTION_MESSAGE = "HIMARK"
 SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 
 WS_SERVER_ADDR = f"ws://{ip}:{port}/ws_connect"
-WS_GET_ROOM_SERVER_ADD = f"ws://{ip}:{port}/client_room"
 WS_GET_ROOM_USER_LIST = f"ws://{ip}:{port}/ws_user_list"
 WS_INFO_ADDR = f"ws://{ip}:{port}/ws_info"
 CONNECT_SERVER_ADDR = f"http://{ip}:{port}/connection_attempt"
@@ -42,9 +41,8 @@ class Client_Connection:
         self.textual_obj = textual_obj
 
         self.ws_info = 0
-
-        self.id = str()
-
+        self.id = -1
+        
     #send json to server
     #currenly same port as old one, potentially change
     async def connect_to_ws_info(self):
@@ -64,46 +62,55 @@ class Client_Connection:
             sys.exit("WebSocket error occurred")
 
     async def wait_for_messages(self):
-        try:
-            self.id = await self.ws.recv()
-
-            while True:
-                recv = await self.ws.recv() #wait for a message
-                self.textual_obj.query_one('#message_box').append(ListItem(Label(recv)))
-        except WebSocketException:
-            sys.exit("WebSocket error occured")
-        except asyncio.CancelledError:
-            sys.exit("User cancelled")
+        async with websockets.connect(WS_SERVER_ADDR) as self.ws:
+            try:
+                self.id = await self.ws.recv()
+                while True:
+                    recv = await self.ws.recv() #wait for a message
+                    self.textual_obj.query_one('#message_box').append(ListItem(Label(recv)))
+            except WebSocketException:
+                sys.exit("WebSocket error occured")
+            except asyncio.CancelledError:
+                sys.exit("User cancelled")
+            except asyncio.exceptions.CancelledError:
+                sys.exit("User cancelled")
 
     async def send_message(self, txt):
         if txt == "exit": #tell the server we are disconnecting
-            raise ConnectionClosed
+            raise ConnectionClosed(1, 2) #passing 1, 2 as arguments because they're needed
         else:
             await self.ws.send(txt)
             
     async def update_user_list(self):
-        try:
-            while True:
-                recv = await self.ws_list.recv() #wait for a message
+        async with websockets.connect(WS_GET_ROOM_USER_LIST) as self.ws_list:
+            try:
+                while self.id == -1: #wait for the id of the user to be set
+                    await asyncio.sleep(0.1)
+                    
+                await self.ws_list.send(self.id) #send the data connection the id of this user
+                
+                while True:
+                    recv = await self.ws_list.recv() #wait for a message (which will be the list of users)
+                    self.textual_obj.query_one('#name_box').clear()
+                    self.textual_obj.query_one('#name_box').append(ListItem(Label("Names:")))
+                    self.textual_obj.query_one('#name_box').append(ListItem(Label(recv)))
+            except WebSocketException:
+                sys.exit("WebSocket error occured")
+            except asyncio.CancelledError:
+                sys.exit("User cancelled")
 
-                self.textual_obj.query_one('#message_box').append(ListItem(Label(recv)))
-        except WebSocketException:
-            sys.exit("WebSocket error occured")
-        except asyncio.CancelledError:
-            sys.exit("User cancelled")
 
-
-    async def main(self):
-        async with websockets.connect(WS_SERVER_ADDR) as self.ws:
-            await asyncio.create_task(self.wait_for_messages()) #task for waiting for messages
-            async with websockets.connect(WS_GET_ROOM_USER_LIST) as self.ws_list:
-                await asyncio.create_task(self.update_user_list())
-
+    async def main(self):        
+        await asyncio.gather(
+            self.wait_for_messages(),
+            self.update_user_list())
+                
 
 class Client(App):
-    CSS_PATH = "client.tcss"
     LOG_FILE = ".himark.log"
     TITLE = "himark"
+
+    BINDINGS = [("\l", "None", "List Rooms"), (r"\n [NAME]", "NONE", "Change name"), (r"\r [ROOM]", "NONEE", "Change room")]
 
     @on(Input.Submitted)
     async def client_input(self) -> None:
@@ -111,16 +118,34 @@ class Client(App):
 
         try:
             await self.c_conn.send_message(input.value) #send message function from client connection
-        except:
+        except ConnectionClosed:
             sys.exit("Connection Closed by user")
 
         input.value = "" #clear input
 
     def compose(self) -> ComposeResult:
+        self.screen.layout = "grid"
+        self.screen.grid_size = 2
+        self.screen.grid_columns = "80% 20%"
+        self.screen.grid_rows = "80% 20%"
+
         yield Header()
-        yield ListView(classes="box", id="message_box") #box to put messages in
-        yield ListView(classes="names", id="name_box") #box to put connected users in
+
+        self.message_box = ListView(classes="box", id="message_box") #box to put messages in
+        yield self.message_box
+        self.message_box.styles.height = "90%"
+        self.message_box.styles.border = ("solid", "green")
+        self.message_box.styles.text_align = "center"
+
+        self.name_box = ListView(classes="names", id="name_box") #box to put connected users in
+        yield self.name_box
+        self.name_box.styles.dock = "right"
+        self.name_box.styles.width = "15%"
+        self.name_box.styles.height = "70%"
+
         yield Input(placeholder=">", type="text") #box to capture input. on submit we call send_message
+
+        yield Footer()
 
         try:
             self.c_conn = Client_Connection(self)
