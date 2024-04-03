@@ -29,7 +29,7 @@ class ConnectionManager:
     def find_client_by_id(self, user_id: str):
         for client in self.active_conn:
             if client.id == user_id:
-                RoomManager.find_client_room(client.name)
+                return RoomManager.find_client_room(client.name)
         return None
 
     async def send_room_info(self, user_id: str):
@@ -43,7 +43,6 @@ class ConnectionManager:
                 await self.send_msg(client, "You are not in any room.")
         else:
             print(f"[WS] Client not found for user ID: {user_id}")
-
         #end of working on
 
     def disconnect(self, client: Client):
@@ -51,7 +50,7 @@ class ConnectionManager:
         print("[WS] Client disconnected")
 
 #working on
-@app.websocket("/ws_connect")
+@app.websocket("/ws_info")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     client = Client(websocket)

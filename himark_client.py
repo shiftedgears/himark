@@ -23,6 +23,7 @@ SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 WS_SERVER_ADDR = f"ws://{ip}:{port}/ws_connect"
 WS_GET_ROOM_SERVER_ADD = f"ws://{ip}:{port}/client_room"
 WS_GET_ROOM_USER_LIST = f"ws://{ip}:{port}/ws_user_list"
+WS_INFO_ADDR = f"ws://{ip}:{port}/ws_info"
 CONNECT_SERVER_ADDR = f"http://{ip}:{port}/connection_attempt"
 
 
@@ -40,24 +41,25 @@ class Client_Connection:
         self.ws_list = 0
         self.textual_obj = textual_obj
 
+        self.ws_info = 0
+
         self.id = str()
 
     #send json to server
     #currenly same port as old one, potentially change
     async def connect_to_ws_info(self):
         try:
-            async with websockets.connect(WS_SERVER_ADDR) as self.ws:
+            async with websockets.connect(WS_INFO_ADDR) as self.ws_info:
                 #Once connected, send the user ID and request
                 user_id = self.id 
-                request = " "   # Replace with the actual request
-                message = json.dumps({"user_id": user_id, "request": request})
+                message = json.dumps({"user_id": user_id})
                 await self.ws.send(message)
                 print(f"Sent message: {message}")
 
                 # Wait for messages from the WebSocket server
                 await self.wait_for_messages()
         except websockets.exceptions.InvalidURI:
-            sys.exit(f"Invalid URI: {WS_SERVER_ADDR}")
+            sys.exit(f"Invalid URI: {WS_INFO_ADDR}")
         except websockets.exceptions.WebSocketException:
             sys.exit("WebSocket error occurred")
 
