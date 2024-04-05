@@ -18,6 +18,7 @@ SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 
 WS_SERVER_ADDR = f"ws://{ip}:{port}/ws_connect"
 WS_GET_ROOM_USER_LIST = f"ws://{ip}:{port}/ws_user_list"
+WS_INFO_ADDR = f"ws://{ip}:{port}/ws_info"
 CONNECT_SERVER_ADDR = f"http://{ip}:{port}/connection_attempt"
 
 class Client_Connection:
@@ -31,6 +32,7 @@ class Client_Connection:
 
         self.ws = 0
         self.ws_list = 0
+        self.ws_info = 0
         self.textual_obj = textual_obj
         self.id = -1
 
@@ -50,7 +52,7 @@ class Client_Connection:
 
     async def send_message(self, txt):
         if txt == "exit": #tell the server we are disconnecting
-            raise ConnectionClosed(1, 2) #passing 1, 2 as arguments because they're needed
+            sys.exit("User exited") #passing 1, 2 as arguments because they're needed
         else:
             await self.ws.send(txt)
             
@@ -72,11 +74,32 @@ class Client_Connection:
             except asyncio.CancelledError:
                 sys.exit("User cancelled")
 
+    async def connect_to_ws_info(self):
+        async with websockets.connect(WS_INFO_ADDR) as self.ws_info:
+            try:
+                while self.id == -1:
+                    await asyncio.sleep(0.1)
 
-    async def main(self):        
+                user_id = self.id
+                await self.ws_info.send(user_id)
+
+                while True:
+                    data = await self.ws_info.recv()
+                    self.textual_obj.query_one('#message_box').append(ListItem("here"))
+                    self.textual_obj.query_one('#message_box').append(ListItem(data))
+
+            except websockets.exceptions.InvalidURI:
+                sys.exit(f"Invalid URI: {WS_INFO_ADDR}")
+            except websockets.exceptions.WebSocketException:
+                sys.exit("Info Websocket error occurred")
+
+
+    async def main(self):
+
         await asyncio.gather(
             self.wait_for_messages(),
-            self.update_user_list())
+            self.update_user_list(),
+            self.connect_to_ws_info())
                 
 
 class Client(App):
