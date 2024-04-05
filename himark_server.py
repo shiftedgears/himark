@@ -151,14 +151,11 @@ async def websocket_info(websocket: WebSocket):
             print(f"client ID {c.iden}, given ID {user_id}")
             if c.iden == user_id:
                 c.set_info_socket(websocket)
-                print("set info socket")
                 client = c
                 break
 
         if not client: #if we did not find the client with this id
             raise WebSocketDisconnect
-
-        print(f"client {client} found")
 
         while True:
             print("wait")

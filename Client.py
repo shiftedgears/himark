@@ -22,7 +22,6 @@ class Client:
         return self.data_websock
 
     def set_info_socket(self, info_websock: WebSocket):
-        print(type(info_websock))
         self.info_websock = info_websock
 
     def get_info_socket(self) -> WebSocket:
