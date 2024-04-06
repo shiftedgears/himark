@@ -87,8 +87,7 @@ class Client_Connection:
 
                 while True:
                     data = await self.ws_info.recv()
-                    self.textual_obj.query_one('#message_box').append(ListItem("here"))
-                    self.textual_obj.query_one('#message_box').append(ListItem(data))
+                    self.textual_obj.sub_title = data
 
             except websockets.exceptions.InvalidURI:
                 sys.exit(f"Invalid URI: {WS_INFO_ADDR}")
@@ -107,6 +106,7 @@ class Client_Connection:
 class Client(App):
     LOG_FILE = ".himark.log"
     TITLE = "himark"
+    SUB_TITLE = ""
 
     BINDINGS = [("\l", "None", "List Rooms"), (r"\n [NAME]", "NONE", "Change name"), (r"\r [ROOM]", "NONEE", "Change room"), ("CTRL+C" , "NOONE", "Exit program")]
 

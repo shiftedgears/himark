@@ -60,7 +60,6 @@ class RoomManager(RoomObserver):
 
         if client not in room.clients:
             room.add_client(client)
-            print(type(client.get_info_socket()))
             await client.get_info_socket().send_text(room.name)
             await self.notify(room) #notify the clients of this room via RoomObserver
             return True
@@ -105,7 +104,7 @@ class RoomManager(RoomObserver):
     # get_rooms()
     # returns a formatted string with all rooms
     def get_rooms(self):
-        room_list = ""
+        room_list = " "
         for room in self.rooms:
             room_list += room.get_name() + '\n '
 

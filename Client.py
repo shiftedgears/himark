@@ -7,7 +7,7 @@ class Client:
         self.name = name
         self.iden = iden
         self.data_websock = 0
-        self.info_websock = 0
+        self.info_websock = 1
 
     def get_socket(self) -> WebSocket:
         return self.websock

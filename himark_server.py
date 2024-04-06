@@ -87,7 +87,7 @@ async def establish_listener(websocket: WebSocket):
                 await conn_manager.send_msg(new_client, ASK_USERNAME)
                 user_name = await new_client.get_socket().receive_text()
                 new_client.set_name(user_name)
-                await conn_manager.send_msg(new_client, f"{ASK_ROOM} {room_manager.get_rooms()}")
+                await conn_manager.send_msg(new_client, f"{ASK_ROOM}{room_manager.get_rooms()}")
                 desired_room = await new_client.get_socket().receive_text()
                 while not found_room:
                     if room_manager.find_room(desired_room) is None:
@@ -162,7 +162,8 @@ async def websocket_info(websocket: WebSocket):
             data = await client.get_info_socket().receive_text()
             print(f"{data}")
 
-    except WebSocketDisconnect:
+    except WebSocketDisconnect as e:
+        print(e)
         print(f"[WS] INFO - WebSocket Disconnected")
 
 
@@ -186,6 +187,7 @@ async def interpret_message(client: Client, message: str):
         try:
             if args[1]: #if there was a second argument
                 client.set_name(args[1])
+                await room_manager.find_client_room(client).update()
                 await conn_manager.send_msg(client, f"=== CHANGED NAME TO {args[1]} ====")
         except IndexError:
             await conn_manager.send_msg(client, NO_NAME_PROVIDED)
