@@ -16,6 +16,10 @@ class ConnectionManager:
         await ws.accept()
         print("[WS] Data Connection Accepted")
 
+    async def info_connect(self, ws : WebSocket):
+        await ws.accept()
+        print("[WS] Info Connection Accepted")
+
     async def broadcast(self, room: Room, message: str):
         print("[WS] Broadcasting to Clients...", end="")
         for client in room.get_client_list():

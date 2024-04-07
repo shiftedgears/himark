@@ -7,9 +7,7 @@ class Client:
         self.name = name
         self.iden = iden
         self.data_websock = 0
-
-    def connect(self, addr: str) -> bool:
-        pass
+        self.info_websock = 1
 
     def get_socket(self) -> WebSocket:
         return self.websock
@@ -19,9 +17,15 @@ class Client:
 
     def set_data_socket(self, data_websock):
         self.data_websock = data_websock
-        
+
     def get_data_socket(self) -> WebSocket:
         return self.data_websock
+
+    def set_info_socket(self, info_websock: WebSocket):
+        self.info_websock = info_websock
+
+    def get_info_socket(self) -> WebSocket:
+        return self.info_websock
 
     def get_name(self) -> str:
         return self.name
@@ -37,6 +41,4 @@ class Client:
             return True
         else:
             return False
-
-
 

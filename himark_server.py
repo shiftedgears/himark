@@ -87,7 +87,7 @@ async def establish_listener(websocket: WebSocket):
                 await conn_manager.send_msg(new_client, ASK_USERNAME)
                 user_name = await new_client.get_socket().receive_text()
                 new_client.set_name(user_name)
-                await conn_manager.send_msg(new_client, f"{ASK_ROOM} {room_manager.get_rooms()}")
+                await conn_manager.send_msg(new_client, f"{ASK_ROOM}{room_manager.get_rooms()}")
                 desired_room = await new_client.get_socket().receive_text()
                 while not found_room:
                     if room_manager.find_room(desired_room) is None:
@@ -136,7 +136,36 @@ async def users_in_room(websocket: WebSocket):
             d = await client.get_data_socket().receive_text()
             print(f"{d}")
     except WebSocketDisconnect:
-        pass
+        print(f"[WS] DATA - WebSocket Disconnected")
+
+@app.websocket("/ws_info")
+async def websocket_info(websocket: WebSocket):
+    try:
+        await conn_manager.info_connect(websocket)
+        user_id = await websocket.receive_text()
+
+        clients_list = conn_manager.active_clients()
+        client = None
+
+        for c in clients_list:
+            print(f"client ID {c.iden}, given ID {user_id}")
+            if c.iden == user_id:
+                c.set_info_socket(websocket)
+                client = c
+                break
+
+        if not client: #if we did not find the client with this id
+            raise WebSocketDisconnect
+
+        while True:
+            print("wait")
+            data = await client.get_info_socket().receive_text()
+            print(f"{data}")
+
+    except WebSocketDisconnect as e:
+        print(e)
+        print(f"[WS] INFO - WebSocket Disconnected")
+
 
 @app.post("/connection_attempt", response_model=client_connection_re)
 async def connection_request(request: client_connection_re):  # receive a connection request from the client
@@ -158,6 +187,7 @@ async def interpret_message(client: Client, message: str):
         try:
             if args[1]: #if there was a second argument
                 client.set_name(args[1])
+                await room_manager.find_client_room(client).update()
                 await conn_manager.send_msg(client, f"=== CHANGED NAME TO {args[1]} ====")
         except IndexError:
             await conn_manager.send_msg(client, NO_NAME_PROVIDED)

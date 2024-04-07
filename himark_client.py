@@ -18,6 +18,7 @@ SERVER_INIT_CONNECTION_RESPONSE = "HEYJOHNNY"
 
 WS_SERVER_ADDR = f"ws://{ip}:{port}/ws_connect"
 WS_GET_ROOM_USER_LIST = f"ws://{ip}:{port}/ws_user_list"
+WS_INFO_ADDR = f"ws://{ip}:{port}/ws_info"
 CONNECT_SERVER_ADDR = f"http://{ip}:{port}/connection_attempt"
 
 class Client_Connection:
@@ -31,6 +32,7 @@ class Client_Connection:
 
         self.ws = 0
         self.ws_list = 0
+        self.ws_info = 0
         self.textual_obj = textual_obj
         self.id = -1
 
@@ -42,15 +44,15 @@ class Client_Connection:
                     recv = await self.ws.recv() #wait for a message
                     self.textual_obj.query_one('#message_box').append(ListItem(Label(recv)))
             except WebSocketException:
-                sys.exit("WebSocket error occured")
+                raise WebSocketException
             except asyncio.CancelledError:
-                sys.exit("User cancelled")
+                raise asyncio.CancelledError
             except asyncio.exceptions.CancelledError:
-                sys.exit("User cancelled")
+                raise asyncio.exceptions.CancelledError
 
     async def send_message(self, txt):
         if txt == "exit": #tell the server we are disconnecting
-            raise ConnectionClosed(1, 2) #passing 1, 2 as arguments because they're needed
+            raise SystemExit
         else:
             await self.ws.send(txt)
             
@@ -68,22 +70,49 @@ class Client_Connection:
                     self.textual_obj.query_one('#name_box').append(ListItem(Label("Names:")))
                     self.textual_obj.query_one('#name_box').append(ListItem(Label(recv)))
             except WebSocketException:
-                sys.exit("WebSocket error occured")
+                raise WebSocketException
             except asyncio.CancelledError:
-                sys.exit("User cancelled")
+                raise asyncio.CancelledError
+            except asyncio.exceptions.CancelledError:
+                raise asyncio.exceptions.CancelledError
+            except:
+                raise SystemExit
 
+    async def connect_to_ws_info(self):
+        async with websockets.connect(WS_INFO_ADDR) as self.ws_info:
+            try:
+                while self.id == -1:
+                    await asyncio.sleep(0.1)
 
-    async def main(self):        
-        await asyncio.gather(
-            self.wait_for_messages(),
-            self.update_user_list())
-                
+                user_id = self.id
+                await self.ws_info.send(user_id)
+
+                while True:
+                    data = await self.ws_info.recv()
+                    self.textual_obj.sub_title = data
+
+            except websockets.exceptions.InvalidURI:
+                sys.exit(f"Invalid URI: {WS_INFO_ADDR}")
+            except websockets.exceptions.WebSocketException:
+                raise websockets.exceptions.WebSocketException
+            except asyncio.exceptions.CancelledError:
+                raise asyncio.exceptions.CancelledError
+
+    async def main(self):
+        try:
+            await asyncio.gather(
+                self.wait_for_messages(),
+                self.update_user_list(),
+                self.connect_to_ws_info())
+        except asyncio.exceptions.CancelledError:
+            raise asyncio.exceptions.CancelledError
 
 class Client(App):
     LOG_FILE = ".himark.log"
     TITLE = "himark"
+    SUB_TITLE = ""
 
-    BINDINGS = [("\l", "None", "List Rooms"), (r"\n [NAME]", "NONE", "Change name"), (r"\r [ROOM]", "NONEE", "Change room")]
+    BINDINGS = [("\l", "None", "List Rooms"), (r"\n [NAME]", "NONE", "Change name"), (r"\r [ROOM]", "NONEE", "Change room"), ("CTRL+C" , "NOONE", "Exit program")]
 
     @on(Input.Submitted)
     async def client_input(self) -> None:
@@ -91,8 +120,10 @@ class Client(App):
 
         try:
             await self.c_conn.send_message(input.value) #send message function from client connection
-        except ConnectionClosed:
-            sys.exit("Connection Closed by user")
+        except SystemExit:
+            raise SystemExit
+        except asyncio.exceptions.CancelledError:
+                asyncio.exceptions.CancelledError
 
         input.value = "" #clear input
 
@@ -125,7 +156,7 @@ class Client(App):
             asyncio.create_task(self.c_conn.main()) #run the main function of the client connection
         except WebSocketException:
             #raised when user types 'exit' to quit program
-            sys.exit()
+            sys.exit("Exit")
         except ConnectionClosed:
             sys.exit("Connection closed")
         except ConnectionError:
@@ -136,6 +167,12 @@ class Client(App):
             sys.exit("Program killed by user")
         except asyncio.CancelledError:
             sys.exit("There was an error cancelling an asynchronous routine")
+        except asyncio.exceptions.CancelledError:
+            sys.exit("Program killed by user")
+        except websockets.exceptions.WebSocketException:
+            sys.exit("Websockets exception raised")
+        except:
+            sys.exit("An unexepected error occurred")
 
 if __name__ == "__main__":
     client = Client()
