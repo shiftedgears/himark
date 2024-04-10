@@ -56,6 +56,6 @@ Once in your venv, or if you choose not to have a virutal environment, ensure yo
 ```pip install -r requirements.txt ```\
 which will install the needed packages.
 
-Once finished you can connect to a server by running himark_client.py \\
+Once finished you can connect to a server by running himark_client.py \
 ```python himark_client.py```\
 which will connect you to a himark server running on your local machine on port 8000.
