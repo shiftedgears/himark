@@ -2,6 +2,24 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import Room
 import Client
 
+"""
+    himark, the CLI chat application
+    Copyright (C) 2024  Curtis Bachen, Nicholas Hopkins, and Vladislav Mazur.
+
+This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
 class ConnectionManager:
 
     def __init__(self):
@@ -15,6 +33,10 @@ class ConnectionManager:
     async def data_connect(self, ws : WebSocket):
         await ws.accept()
         print("[WS] Data Connection Accepted")
+
+    async def info_connect(self, ws : WebSocket):
+        await ws.accept()
+        print("[WS] Info Connection Accepted")
 
     async def broadcast(self, room: Room, message: str):
         print("[WS] Broadcasting to Clients...", end="")

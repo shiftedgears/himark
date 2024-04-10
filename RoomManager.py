@@ -1,12 +1,30 @@
 from Client import Client
 from Room import Room, RoomObserver
 
+"""
+    himark, the CLI chat application
+    Copyright (C) 2024  Curtis Bachen, Nicholas Hopkins, and Vladislav Mazur.
+
+This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
 class RoomManager(RoomObserver):
 
     def __init__(self):
         RoomObserver.__init__(self)
         self.rooms = []
-        
+
     # when called, prints out a list of all the rooms in the room manager to the server
     def list_rooms(self) -> None:
         for room in self.rooms:
@@ -47,6 +65,7 @@ class RoomManager(RoomObserver):
             self.attach(Room(room_name))
             return True
 
+
     # add_client(client_name: str, room_name: str)
     # attempts to append a user to a room.
     # returns true on success, or false on failure
@@ -59,6 +78,7 @@ class RoomManager(RoomObserver):
 
         if client not in room.clients:
             room.add_client(client)
+            await client.get_info_socket().send_text(room.name)
             await self.notify(room) #notify the clients of this room via RoomObserver
             return True
         else:
@@ -88,6 +108,7 @@ class RoomManager(RoomObserver):
 
         return None
 
+
     # find_client(client_name: str)
     # searches through all rooms to see if a user matches client_name
     # Returns true on success, or false on failure
@@ -101,10 +122,10 @@ class RoomManager(RoomObserver):
     # get_rooms()
     # returns a formatted string with all rooms
     def get_rooms(self):
-        room_list = str()
+        room_list = " "
         for room in self.rooms:
             room_list += room.get_name() + '\n '
-            
+
         #we'll have one more \n than expected, so we want to trim off the last two characters
 
         return room_list[:-2]
